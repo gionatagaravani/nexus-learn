@@ -1,6 +1,6 @@
 import { Edit3, Clock, Plus } from "lucide-react";
 
-export function NotesTab({ subjectId }: { subjectId: string }) {
+export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
   return (
     <div className="flex h-[calc(100vh-280px)] border border-black/[0.08] rounded-[12px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
       {/* Sidebar for Notes List */}

@@ -1,6 +1,6 @@
 import { PlayCircle, CheckCircle2, Clock, BarChart3, Plus } from "lucide-react";
 
-export function ExercisesTab({ subjectId }: { subjectId: string }) {
+export function ExercisesTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
   return (
     <div className="flex flex-col h-full gap-6">
        

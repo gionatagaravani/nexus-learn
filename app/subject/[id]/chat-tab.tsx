@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Upload, Sparkles, User, BrainCircuit } from "lucide-react";
 
-export function ChatTab({ subjectId }: { subjectId: string }) {
+export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
   const [messages, setMessages] = useState<
     { id: string; role: "user" | "assistant"; content: string }[]
   >([]);
@@ -39,7 +39,7 @@ export function ChatTab({ subjectId }: { subjectId: string }) {
         body: JSON.stringify({
           messages: [...messages, userMessage],
           subjectId,
-          userId: "mock-user-id", // TODO: Get from auth
+          userId: userId,
         }),
       });
 

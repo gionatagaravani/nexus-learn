@@ -120,16 +120,19 @@ export interface Database {
         Row: {
           id: string
           subject_id: string | null
+          user_id: string
           created_at: string
         }
         Insert: {
           id?: string
           subject_id?: string | null
+          user_id?: string
           created_at?: string
         }
         Update: {
           id?: string
           subject_id?: string | null
+          user_id?: string
           created_at?: string
         }
       }

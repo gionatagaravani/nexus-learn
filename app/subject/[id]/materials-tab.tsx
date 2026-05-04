@@ -13,15 +13,16 @@ interface Material {
   created_at: string
 }
 
-export function MaterialsTab({ subjectId }: { subjectId: string }) {
+export function MaterialsTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMaterials = async () => {
+    if (!userId) return;
+
     try {
-      const userId = "mock-user-id"; // TODO: Get from auth
       const response = await fetch(
         `/api/materials/list?subjectId=${subjectId}&userId=${userId}`
       );
@@ -38,15 +39,20 @@ export function MaterialsTab({ subjectId }: { subjectId: string }) {
 
   useEffect(() => {
     loadMaterials();
-  }, [subjectId]);
+  }, [subjectId, userId]);
 
   const handleUpload = async (file: File) => {
+    if (!userId) {
+      alert("Please sign in to upload materials");
+      return;
+    }
+
     setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("subjectId", subjectId);
-      formData.append("userId", "mock-user-id"); // TODO: Get from auth
+      formData.append("userId", userId);
 
       const response = await fetch("/api/materials/upload", {
         method: "POST",

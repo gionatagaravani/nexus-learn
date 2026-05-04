@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const supabase = await createClient()
     const { data: materials, error } = await supabase
       .from('materials')
       .select('*')

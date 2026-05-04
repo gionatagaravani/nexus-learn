@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { generateEmbedding } from '@/lib/embeddings/gemini'
 
 export const runtime = 'nodejs'
@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const supabase = await createClient()
 
     // Generate embedding for query
     const queryEmbedding = await generateEmbedding(query)

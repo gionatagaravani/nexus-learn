@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { generateQuiz } from '@/lib/ai/gemini'
 
 export const runtime = 'nodejs'
@@ -15,14 +15,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get chunks for the subject
-    let dbQuery = supabase.from('chunks').select('content, material_id')
+    const supabase = await createClient()
 
-    // Filter by subject if specified (via material_id)
+    // Get materials for the subject
     const { data: materials } = await supabase
       .from('materials')
       .select('id')
       .eq('subject_id', subjectId)
+
+    // Get chunks for the subject
+    let dbQuery = supabase.from('chunks').select('content, material_id')
 
     if (materials && materials.length > 0) {
       const materialIds = materials.map(m => m.id)

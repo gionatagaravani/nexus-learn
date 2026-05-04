@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const supabase = await createClient()
     const { data: subjects, error } = await supabase
       .from('subjects')
       .select('*')
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const supabase = await createClient()
     const { data: subject, error } = await supabase
       .from('subjects')
       .insert({

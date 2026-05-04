@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css'; // Global styles
+import { AuthProvider } from '@/components/auth-provider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,7 +22,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased text-neutral-900 bg-neutral-50" suppressHydrationWarning>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

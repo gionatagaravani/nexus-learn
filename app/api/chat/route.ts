@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { chatWithGemini, type ChatMessage } from '@/lib/ai/gemini'
 import { generateEmbedding } from '@/lib/embeddings/gemini'
 
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     let sources: string[] = []
 
     try {
+      const supabase = await createClient()
       const queryEmbedding = await generateEmbedding(lastUserMessage.content)
 
       let dbQuery = supabase
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Save chat messages if chatId is provided
     if (chatId) {
+      const supabase = await createClient()
       // Save user message
       await supabase.from('messages').insert({
         chat_id: chatId,

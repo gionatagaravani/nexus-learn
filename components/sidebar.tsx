@@ -9,11 +9,15 @@ import {
   TrendingUp,
   BrainCircuit,
   PlusCircle,
-  FileText
+  FileText,
+  LogOut,
+  User
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useAuth } from "./auth-provider";
+import { createBrowserClient } from "@supabase/ssr";
 
 const mainNav = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -23,18 +27,50 @@ const mainNav = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-const mockSubjects = [
-  { id: "1", name: "Machine Learning", open: true, items: ['Lectures', 'Notes'] },
-  { id: "2", name: "Linear Algebra", open: false, items: [] },
-  { id: "3", name: "Distributed Systems", open: false, items: [] },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
-  const [subjects, setSubjects] = useState(mockSubjects);
+  const router = useRouter();
+  const { user, profile, signOut } = useAuth();
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [supabase] = useState(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  ));
+
+  useEffect(() => {
+    if (user) {
+      fetchSubjects();
+    }
+  }, [user, supabase]);
+
+  const fetchSubjects = async () => {
+    const { data } = await supabase
+      .from('subjects')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('created_at', { ascending: false });
+    if (data) {
+      setSubjects(data.map(s => ({ ...s, open: false, items: [] })));
+    }
+  };
 
   const toggleSubject = (id: string) => {
     setSubjects(subjects.map(s => s.id === id ? { ...s, open: !s.open } : s));
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
+  const getUserInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (profile?.email) {
+      return profile.email.slice(0, 2).toUpperCase();
+    }
+    return 'JD';
   };
 
   return (
@@ -102,13 +138,32 @@ export function Sidebar() {
       
       <div className="p-4 border-t border-black/[0.06]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-semibold text-xs shadow-sm">
-            JD
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt="Avatar"
+              className="w-8 h-8 rounded-full object-cover shadow-sm"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-semibold text-xs shadow-sm">
+              <User className="w-4 h-4" />
+            </div>
+          )}
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-sm font-semibold text-black leading-tight truncate">
+              {profile?.full_name || profile?.email || 'User'}
+            </span>
+            <span className="text-[11px] text-neutral-500 font-medium truncate">
+              {profile?.email || 'student@nexus.learn'}
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-black leading-tight">Jane Doe</span>
-            <span className="text-[11px] text-neutral-500 font-medium">Free Plan</span>
-          </div>
+          <button
+            onClick={handleSignOut}
+            className="text-neutral-400 hover:text-black hover:bg-black/[0.04] p-1.5 rounded-md transition-colors"
+            title="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

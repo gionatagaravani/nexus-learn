@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { uploadMaterial, getFileType } from '@/lib/supabase/storage'
 import { parsePDF, chunkPDF } from '@/lib/parsers/pdf'
 
@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const supabase = await createClient()
 
     // Upload file to Supabase Storage
     const uploadResult = await uploadMaterial(userId, subjectId, file)

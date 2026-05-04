@@ -56,10 +56,10 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
 
         {/* Dynamic Content Area */}
         <div className="flex-1 overflow-hidden min-h-[500px]">
-          {activeTab === "materials" && <MaterialsTab />}
-          {activeTab === "notes" && <NotesTab />}
-          {activeTab === "chat" && <ChatTab />}
-          {activeTab === "exercises" && <ExercisesTab />}
+          {activeTab === "materials" && <MaterialsTab subjectId={mockSubject.id} />}
+          {activeTab === "notes" && <NotesTab subjectId={mockSubject.id} />}
+          {activeTab === "chat" && <ChatTab subjectId={mockSubject.id} />}
+          {activeTab === "exercises" && <ExercisesTab subjectId={mockSubject.id} />}
         </div>
       </div>
     </DashboardLayout>

@@ -17,11 +17,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+export function AuthProvider({
+  children,
+  initialSession
+}: {
+  children: ReactNode
+  initialSession?: {
+    user: User | null
+    profile: Profile | null
+  } | null
+}) {
+  // Initialize state from server-provided session if available
+  const [user, setUser] = useState<User | null>(initialSession?.user ?? null)
+  const [profile, setProfile] = useState<Profile | null>(initialSession?.profile ?? null)
+  const [loading, setLoading] = useState(!initialSession) // No loading if we have initial session
   const [mounted, setMounted] = useState(false)
+
   const [supabase] = useState(() => createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
@@ -30,22 +41,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true)
 
-    // Get initial session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          await fetchProfile(session.user.id)
+    // If we already have session from server, just set up listeners
+    if (initialSession?.user) {
+      console.log('[AuthProvider] Using initial session from server:', initialSession.user.id)
+      setLoading(false)
+    } else {
+      // Otherwise try to get session from client
+      const initializeAuth = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          setUser(session?.user ?? null)
+          if (session?.user) {
+            await fetchProfile(session.user.id)
+          }
+        } catch (error) {
+          console.error('Auth initialization error:', error)
+        } finally {
+          setLoading(false)
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error)
-      } finally {
-        setLoading(false)
       }
+      initializeAuth()
     }
-
-    initializeAuth()
 
     // Listen for auth changes
     const {
@@ -61,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase])
+  }, [supabase, initialSession])
 
   const fetchProfile = async (userId: string) => {
     try {

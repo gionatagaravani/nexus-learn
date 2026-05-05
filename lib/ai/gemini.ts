@@ -13,11 +13,12 @@ export interface ChatResponse {
 }
 
 /**
- * Send a message to Gemini with context
+ * Send a message to Gemini with context and optional image
  */
 export async function chatWithGemini(
   messages: ChatMessage[],
-  context?: string
+  context?: string,
+  image?: { data: string; mimeType: string }
 ): Promise<ChatResponse> {
   try {
     // Build system instruction with context if provided
@@ -29,16 +30,15 @@ Respond in a clear, concise, and helpful manner. Use examples when helpful.`
       systemInstruction += `\n\nContext from study materials:\n${context}`
     }
 
-    // Convert messages to format expected by SDK
-    const history: Array<{ role: string; parts: Array<{ text: string }> }> =
-      messages.slice(0, -1).map((m) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }))
+    // Convert history messages (all but the last one)
+    const history = messages.slice(0, -1).map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }))
 
     const lastMessage = messages[messages.length - 1]
 
-    // Use chats API for conversation history
+    // Initialize chat session
     const chat = ai.chats.create({
       model: 'gemini-2.5-flash',
       history,
@@ -47,12 +47,26 @@ Respond in a clear, concise, and helpful manner. Use examples when helpful.`
       },
     })
 
-    const response = await chat.sendMessage({
-      message: lastMessage.content,
+    const parts: any[] = [{ text: lastMessage.content }]
+    
+    if (image) {
+      parts.push({
+        inlineData: {
+          data: image.data,
+          mimeType: image.mimeType
+        }
+      })
+    }
+
+    // In @google/genai, sendMessage can take a string or an object with parts
+    const result = await chat.sendMessage({
+      message: {
+        parts
+      }
     })
 
     return {
-      message: response.text || '',
+      message: result.text || '',
     }
   } catch (error) {
     console.error('Gemini chat error:', error)
@@ -84,7 +98,7 @@ Return only the JSON, no additional text.`
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
     })
 
     const text = response.text || ''
@@ -111,13 +125,12 @@ Return only the JSON, no additional text.`
  */
 export async function generateText(prompt: string): Promise<string> {
   try {
-    const result = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
     })
 
-    // In @google/genai 1.x, the text property is directly available
-    return result.text || ''
+    return response.text || ''
   } catch (error) {
     console.error('Text generation error:', error)
     throw new Error('Failed to generate text from AI')
@@ -141,7 +154,7 @@ Keep it under 500 words.`
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
     })
 
     return response.text || ''

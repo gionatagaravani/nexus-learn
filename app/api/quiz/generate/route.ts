@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build context from chunks
+    // Build context from chunks - use more chunks for better quiz quality
     const context = chunks
       .map((m) => m.content)
-      .slice(0, 5) // Limit context size
+      .slice(0, 15) // Increased from 5 to 15 for better coverage
       .join('\n\n---\n\n')
 
     // Generate quiz

@@ -1,16 +1,22 @@
 "use client";
 
-import { Bell, Search, Upload, LogIn } from "lucide-react";
+import { Bell, Search, Upload, LogIn, Menu } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "./auth-provider";
 
-export function Topbar() {
+export function Topbar({ onMobileMenuClick }: { onMobileMenuClick?: () => void }) {
   const { user, loading } = useAuth();
 
   return (
     <header className="h-14 border-b border-black/[0.06] bg-[#FAFAFA]/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10 transition-shadow">
-      <div className="flex-1 flex justify-start">
-        <div className="w-full max-w-sm relative flex text-neutral-400 focus-within:text-neutral-900 transition-colors">
+      <div className="flex-1 flex justify-start items-center gap-3">
+        <button 
+          className="md:hidden text-neutral-500 hover:text-black transition-colors"
+          onClick={onMobileMenuClick}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="w-full max-w-sm relative flex text-neutral-400 focus-within:text-neutral-900 transition-colors hidden sm:flex">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"

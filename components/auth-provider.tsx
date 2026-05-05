@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
-import { createBrowserClient } from '@supabase/ssr'
 import { Database } from '@/types/supabase'
+import { supabase } from '@/lib/supabase/client'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -13,6 +13,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
+  supabase: typeof supabase
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -33,18 +34,31 @@ export function AuthProvider({
   const [loading, setLoading] = useState(!initialSession) // No loading if we have initial session
   const [mounted, setMounted] = useState(false)
 
-  const [supabase] = useState(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  ))
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (error) {
+        console.error('Profile fetch error:', error)
+      } else {
+        setProfile(data)
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    }
+  }
 
   useEffect(() => {
-    setMounted(true)
-
     // If we already have session from server, just set up listeners
     if (initialSession?.user) {
       console.log('[AuthProvider] Using initial session from server:', initialSession.user.id)
-      setLoading(false)
+      supabase.auth.getSession().then(() => {
+        setLoading(false)
+        setMounted(true)
+      })
     } else {
       // Otherwise try to get session from client
       const initializeAuth = async () => {
@@ -58,6 +72,7 @@ export function AuthProvider({
           console.error('Auth initialization error:', error)
         } finally {
           setLoading(false)
+          setMounted(true)
         }
       }
       initializeAuth()
@@ -79,23 +94,6 @@ export function AuthProvider({
     return () => subscription.unsubscribe()
   }, [supabase, initialSession])
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-      if (error) {
-        console.error('Profile fetch error:', error)
-      } else {
-        setProfile(data)
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-    }
-  }
-
   const signOut = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -114,7 +112,7 @@ export function AuthProvider({
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut, refreshUser }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, refreshUser, supabase }}>
       {children}
     </AuthContext.Provider>
   )

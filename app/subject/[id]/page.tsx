@@ -3,7 +3,6 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { createBrowserClient } from "@supabase/ssr";
 import {
   FileText,
   MessageSquare,
@@ -22,17 +21,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
   const [activeTab, setActiveTab] = useState<TabType>("materials");
   const [subject, setSubject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const [supabase] = useState(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  ));
-
-  useEffect(() => {
-    if (user) {
-      fetchSubject();
-    }
-  }, [user, supabase]);
+  const { user, supabase } = useAuth();
 
   const fetchSubject = async () => {
     const { id } = await params;
@@ -54,6 +43,12 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchSubject();
+    }
+  }, [user, supabase]);
 
   if (loading) {
     return (

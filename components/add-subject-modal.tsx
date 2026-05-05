@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import { createBrowserClient } from '@supabase/ssr'
+import { useAuth } from './auth-provider'
 
 interface AddSubjectModalProps {
   isOpen: boolean
@@ -15,10 +15,7 @@ export function AddSubjectModal({ isOpen, onClose, onSubjectCreated, userId }: A
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [supabase] = useState(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  ))
+  const { supabase } = useAuth()
 
   if (!isOpen) return null
 

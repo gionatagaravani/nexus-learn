@@ -17,6 +17,8 @@ export async function middleware(req: NextRequest) {
           return req.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
+          // Update request cookie so server components see it
+          req.cookies.set(name, value)
           res.cookies.set({
             name,
             value,
@@ -24,6 +26,8 @@ export async function middleware(req: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
+          // Remove request cookie so server components see it
+          req.cookies.delete(name)
           res.cookies.delete({
             name,
             ...options,
@@ -34,8 +38,8 @@ export async function middleware(req: NextRequest) {
   )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const isAuthPage = req.nextUrl.pathname.startsWith('/login') ||
                      req.nextUrl.pathname.startsWith('/signup')
@@ -49,14 +53,14 @@ export async function middleware(req: NextRequest) {
   }
 
   // Redirect to login if not authenticated (all pages except auth pages)
-  if (!session && !isAuthPage) {
+  if (!user && !isAuthPage) {
     const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
   // Redirect to home if already authenticated on auth pages
-  if (session && isAuthPage) {
+  if (user && isAuthPage) {
     const redirectTo = req.nextUrl.searchParams.get('redirectTo') || '/'
     return NextResponse.redirect(new URL(redirectTo, req.url))
   }

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find relevant chunks using similarity search
+    // Find relevant chunks using similarity search via RPC
     let context = ''
     let sources: string[] = []
 
@@ -33,29 +33,19 @@ export async function POST(request: NextRequest) {
       const supabase = await createClient()
       const queryEmbedding = await generateEmbedding(lastUserMessage.content)
 
-      let dbQuery = supabase
-        .from('chunks')
-        .select('*')
+      // Call the match_chunks function in Postgres
+      const { data: chunks, error: rpcError } = await supabase.rpc('match_chunks', {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.5,
+        match_count: 5,
+        p_subject_id: subjectId,
+      })
 
-      if (subjectId) {
-        dbQuery = dbQuery.eq('material_id', subjectId)
-      }
-
-      const { data: chunks } = await dbQuery
+      if (rpcError) throw rpcError
 
       if (chunks && chunks.length > 0) {
-        // Calculate similarity (client-side for now)
-        const results = chunks
-          .map((doc) => ({
-            ...doc,
-            similarity: cosineSimilarity(queryEmbedding, doc.embedding || []),
-          }))
-          .filter((doc) => doc.similarity > 0.6)
-          .sort((a, b) => b.similarity - a.similarity)
-          .slice(0, 3)
-
-        context = results.map((r) => r.content).join('\n\n---\n\n')
-        sources = results.map((r) => r.id)
+        context = chunks.map((r: any) => r.content).join('\n\n---\n\n')
+        sources = chunks.map((r: any) => r.id)
       }
     } catch (error) {
       console.error('Context retrieval error:', error)
@@ -68,6 +58,7 @@ export async function POST(request: NextRequest) {
     // Save chat messages if chatId is provided
     if (chatId) {
       const supabase = await createClient()
+      
       // Save user message
       await supabase.from('messages').insert({
         chat_id: chatId,
@@ -97,21 +88,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-// Cosine similarity helper
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (!a || !b || a.length !== b.length) return 0
-
-  let dotProduct = 0
-  let normA = 0
-  let normB = 0
-
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i]
-    normA += a[i] * a[i]
-    normB += b[i] * b[i]
-  }
-
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
 }

@@ -53,14 +53,17 @@ export function getFileType(filename: string): FileType {
 export async function uploadMaterial(
   userId: string,
   subjectId: string,
-  file: File
+  file: File,
+  client?: any
 ): Promise<UploadResult> {
   // Create path: {userId}/{subjectId}/{timestamp}-{filename}
   const timestamp = Date.now()
   const filename = `${timestamp}-${file.name}`
   const path = `${userId}/${subjectId}/${filename}`
 
-  const { error } = await supabase.storage
+  const supabaseClient = client || supabase
+
+  const { error } = await supabaseClient.storage
     .from(MATERIALS_BUCKET)
     .upload(path, file, {
       cacheControl: '3600',

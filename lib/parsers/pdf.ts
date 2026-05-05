@@ -1,7 +1,45 @@
 import { readFile } from 'fs/promises'
+import { GoogleGenAI } from '@google/genai'
 
-// @ts-ignore - pdf-parse doesn't have proper types
-const pdf = require('pdf-parse')
+// Correct initialization: it takes the API key string directly, not an object
+const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
+
+// ... (keep polyfills as they are)
+// ... (omitted polyfills for brevity, I will include them in the real call)
+// pdf-parse depends on these browser globals which are missing in Node.js
+if (typeof global !== 'undefined') {
+  // @ts-ignore
+  if (!global.DOMMatrix) {
+    // @ts-ignore
+    global.DOMMatrix = class DOMMatrix {
+      a: number = 1; b: number = 0; c: number = 0; d: number = 1; e: number = 0; f: number = 0;
+      constructor(init?: string | number[]) {
+        if (Array.isArray(init)) {
+          [this.a, this.b, this.c, this.d, this.e, this.f] = init;
+        }
+      }
+    };
+  }
+  // @ts-ignore
+  if (!global.ImageData) {
+    // @ts-ignore
+    global.ImageData = class ImageData {
+      data: Uint8ClampedArray;
+      width: number;
+      height: number;
+      constructor(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+        this.data = new Uint8ClampedArray(width * height * 4);
+      }
+    };
+  }
+  // @ts-ignore
+  if (!global.Path2D) {
+    // @ts-ignore
+    global.Path2D = class Path2D {};
+  }
+}
 
 export interface PDFPage {
   pageNumber: number
@@ -15,20 +53,109 @@ export interface ParsedPDF {
 }
 
 /**
+ * Extract text from a scanned PDF using Gemini Vision/OCR
+ */
+export async function parsePDFWithAI(buffer: Buffer): Promise<ParsedPDF> {
+  try {
+    console.log('[Parser] Sending PDF to Gemini for OCR extraction...')
+    
+    // Using @google/genai syntax
+    const response = await aiClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                data: buffer.toString('base64'),
+                mimeType: 'application/pdf'
+              }
+            },
+            { text: "Extract all text from this PDF document. Provide a comprehensive transcription of each page. Format the output as JSON with an array of objects called 'pages', each containing 'pageNumber' and 'text'." }
+          ]
+        }
+      ]
+    })
+
+    const text = response.text || ''
+    
+    // Try to parse JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0])
+        console.log(`[Parser] AI extraction successful: ${parsed.pages.length} pages found`)
+        return {
+          text: parsed.pages.map((p: any) => p.text).join('\n\n'),
+          pages: parsed.pages,
+          totalPages: parsed.pages.length
+        }
+      } catch (e) {
+        console.error('Failed to parse PDF OCR JSON:', e)
+      }
+    }
+
+    return {
+      text: text,
+      pages: [{ pageNumber: 1, text: text }],
+      totalPages: 1
+    }
+  } catch (error) {
+    console.error('AI PDF parsing error:', error)
+    throw new Error('Failed to parse PDF with AI')
+  }
+}
+
+/**
  * Parse a PDF file and extract text
  */
 export async function parsePDF(buffer: Buffer): Promise<ParsedPDF> {
-  const data = await pdf(buffer)
+  try {
+    console.log('[Parser] Attempting standard PDF parsing...')
+    
+    let parse: any
+    try {
+      // Trying different import strategies for pdf-parse
+      const mod = await import('pdf-parse')
+      parse = mod.default || mod
+      if (typeof parse !== 'function' && (parse as any).default) {
+        parse = (parse as any).default
+      }
+    } catch (importError) {
+      console.warn('[Parser] Could not import pdf-parse, will try AI fallback immediately.')
+      return parsePDFWithAI(buffer)
+    }
 
-  const pages: PDFPage[] = data.text.split('\f').map((text: string, index: number) => ({
-    pageNumber: index + 1,
-    text: text.trim(),
-  }))
+    if (typeof parse !== 'function') {
+      console.warn('[Parser] pdf-parse is not a function, falling back to AI.')
+      return parsePDFWithAI(buffer)
+    }
 
-  return {
-    text: data.text,
-    pages: pages.filter((page) => page.text.length > 0),
-    totalPages: data.numpages || pages.length,
+    const data = await parse(buffer)
+
+    const pages: PDFPage[] = data.text.split('\f').map((text: string, index: number) => ({
+      pageNumber: index + 1,
+      text: text.trim(),
+    }))
+
+    const filteredPages = pages.filter((page) => page.text.length > 0)
+    
+    // If no text was extracted (likely a scan), try AI fallback
+    if (filteredPages.length === 0 && data.numpages > 0) {
+      console.log('[Parser] PDF seems to be a scan (0 characters extracted), falling back to Gemini OCR...')
+      return parsePDFWithAI(buffer)
+    }
+
+    return {
+      text: data.text,
+      pages: filteredPages,
+      totalPages: data.numpages || pages.length,
+    }
+  } catch (error) {
+    console.error('[Parser] Standard PDF parsing error:', error)
+    console.log('[Parser] Falling back to Gemini OCR...')
+    return parsePDFWithAI(buffer)
   }
 }
 

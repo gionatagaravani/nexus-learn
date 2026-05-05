@@ -4,27 +4,14 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { BookOpen, FileText, ArrowRight, PlayCircle, Clock, Sparkles, FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
-import { createBrowserClient } from "@supabase/ssr";
 import { useEffect, useState } from "react";
 import { AddSubjectModal } from "@/components/add-subject-modal";
 
 export default function Home() {
-  const { user, profile } = useAuth();
+  const { user, profile, supabase } = useAuth();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [supabase] = useState(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  ));
-
-  useEffect(() => {
-    if (user) {
-      fetchSubjects();
-    } else {
-      setLoading(false);
-    }
-  }, [user, supabase]);
 
   const fetchSubjects = async () => {
     setLoading(true);
@@ -44,6 +31,14 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchSubjects();
+    } else {
+      setLoading(false);
+    }
+  }, [user, supabase]);
 
   const handleSubjectCreated = (newSubject: any) => {
     setSubjects(prev => [{ ...newSubject, materials: [] }, ...prev]);

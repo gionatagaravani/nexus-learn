@@ -46,17 +46,17 @@ export async function ServerAuth({ children }: { children: React.ReactNode }) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user: authUser } } = await supabase.auth.getUser()
 
   let user: User | null = null
   let profile: Profile | null = null
 
-  if (session?.user) {
-    user = session.user
+  if (authUser) {
+    user = authUser
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', authUser.id)
       .single()
     profile = data ?? null
   }

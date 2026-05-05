@@ -17,7 +17,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "./auth-provider";
-import { createBrowserClient } from "@supabase/ssr";
 import { AddSubjectModal } from "./add-subject-modal";
 
 const mainNav = [
@@ -31,19 +30,9 @@ const mainNav = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, supabase } = useAuth();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [supabase] = useState(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  ));
-
-  useEffect(() => {
-    if (user) {
-      fetchSubjects();
-    }
-  }, [user, supabase]);
 
   const fetchSubjects = async () => {
     const { data } = await supabase
@@ -55,6 +44,12 @@ export function Sidebar() {
       setSubjects(data.map(s => ({ ...s, open: false, items: [] })));
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchSubjects();
+    }
+  }, [user, supabase]);
 
   const handleSubjectCreated = (newSubject: any) => {
     setSubjects(prev => [{ ...newSubject, open: false, items: [] }, ...prev]);

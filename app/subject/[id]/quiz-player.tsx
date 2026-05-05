@@ -100,7 +100,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
             <Trophy className="w-10 h-10" />
           </div>
           <h2 className="text-2xl font-bold text-black mb-2">Quiz Completed!</h2>
-          <p className="text-neutral-500 mb-6 font-medium">You've finished "{quiz.title}"</p>
+          <p className="text-neutral-500 mb-6 font-medium">You&apos;ve finished &quot;{quiz.title}&quot;</p>
           
           <div className="bg-neutral-50 rounded-xl p-6 mb-8 border border-black/[0.04]">
             <div className="text-sm font-semibold text-neutral-400 uppercase tracking-widest mb-1">Your Score</div>

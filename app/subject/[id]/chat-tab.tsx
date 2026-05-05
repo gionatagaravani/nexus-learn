@@ -177,8 +177,8 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
   const userName = profile?.full_name || "Student";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-280px)] border border-black/[0.08] rounded-[12px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 scrollbar-hide">
+    <div className="flex flex-col flex-1 h-full border border-black/[0.08] rounded-[12px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-6 scrollbar-hide">
         {historyLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-6 h-6 border-2 border-black/10 border-t-black rounded-full animate-spin" />

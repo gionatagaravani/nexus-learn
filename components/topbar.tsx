@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, Upload, LogIn, Menu } from "lucide-react";
+import { Bell, Search, LogIn, Menu } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "./auth-provider";
 
@@ -29,10 +29,7 @@ export function Topbar({ onMobileMenuClick }: { onMobileMenuClick?: () => void }
       <div className="flex items-center gap-3">
         {!loading && user ? (
           <>
-            <button className="hidden sm:flex h-8 items-center gap-2 px-3 rounded-md bg-black text-white text-xs font-semibold transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.08)] hover:bg-neutral-800 focus:outline-none focus:ring-4 focus:ring-black/[0.04]">
-              <Upload className="w-3.5 h-3.5" strokeWidth={2.5} />
-              Upload
-            </button>
+
             <button className="w-8 h-8 rounded-md flex items-center justify-center text-neutral-500 hover:text-black hover:bg-black/[0.04] transition-colors relative">
               <Bell className="w-4 h-4" />
               <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-red-500 border-2 border-[#FAFAFA]"></span>

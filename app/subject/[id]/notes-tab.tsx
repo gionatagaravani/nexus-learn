@@ -17,7 +17,7 @@ interface Note {
   updated_at: string;
 }
 
-export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
+export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string; userId?: string; isScrolled?: boolean }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
@@ -230,14 +230,14 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
   };
 
   return (
-    <div className={`flex border border-black/[0.08] rounded-[12px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all
+    <div className={`flex overflow-hidden transition-all
       ${isFullscreen 
-        ? 'fixed inset-4 z-[100] h-[calc(100vh-32px)]' 
-        : 'h-[calc(100vh-280px)]'
+        ? 'fixed inset-4 z-[100] h-[calc(100vh-32px)] bg-white border border-black/[0.08] rounded-[12px] shadow-2xl' 
+        : 'flex-1 h-full bg-transparent'
       }`}
     >
       {/* Sidebar for Notes List - Hidden in fullscreen if you prefer, but usually good to keep for navigation or toggle it */}
-      <div className={`${isFullscreen ? 'w-[240px]' : 'w-1/3 min-w-[280px]'} border-r border-black/[0.08] bg-[#FAFAFA] flex flex-col hidden md:flex`}>
+      <div className={`${isFullscreen ? 'w-[240px]' : 'w-1/3 min-w-[280px]'} border border-black/[0.08] md:rounded-l-[12px] bg-[#FAFAFA] flex flex-col hidden md:flex`}>
          <div className="p-4 border-b border-black/[0.08] flex justify-between items-center bg-[#FAFAFA]/80 backdrop-blur-sm">
             <h3 className="font-semibold text-black text-[11px] uppercase tracking-[0.1em]">Study Notes</h3>
             <button 
@@ -310,7 +310,7 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
       </div>
       
       {/* Main Note Editor */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className={`flex-1 flex flex-col bg-white border-y border-r border-black/[0.08] md:rounded-r-[12px] ${isFullscreen ? 'border-none rounded-none' : ''}`}>
          <AnimatePresence mode="wait">
            {activeNote ? (
              <motion.div 

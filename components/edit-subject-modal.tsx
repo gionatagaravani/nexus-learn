@@ -1,24 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from './auth-provider'
 
-interface AddSubjectModalProps {
+interface EditSubjectModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubjectCreated: (subject: any) => void
-  userId: string
+  onSubjectUpdated: (subject: any) => void
+  subject: {
+    id: string
+    name: string
+    icon: string | null
+  }
 }
 
 const EMOJI_LIST = ['📚', '💻', '🧬', '📐', '🌍', '🎨', '🎵', '⚽', '🔬', '💡', '🧠', '💼', '🚀', '📊', '📈', '📋', '📝', '✏️', '🏆', '🧩']
 
-export function AddSubjectModal({ isOpen, onClose, onSubjectCreated, userId }: AddSubjectModalProps) {
-  const [name, setName] = useState('')
-  const [icon, setIcon] = useState('📚')
+export function EditSubjectModal({ isOpen, onClose, onSubjectUpdated, subject }: EditSubjectModalProps) {
+  const [name, setName] = useState(subject.name)
+  const [icon, setIcon] = useState(subject.icon || '📚')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { supabase } = useAuth()
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(subject.name)
+      setIcon(subject.icon || '📚')
+    }
+  }, [isOpen, subject])
 
   if (!isOpen) return null
 
@@ -30,22 +41,20 @@ export function AddSubjectModal({ isOpen, onClose, onSubjectCreated, userId }: A
     try {
       const { data, error } = await supabase
         .from('subjects')
-        .insert({
+        .update({
           name: name.trim(),
           icon: icon,
-          user_id: userId,
         })
+        .eq('id', subject.id)
         .select()
         .single()
 
       if (error) throw error
 
-      onSubjectCreated(data)
-      setName('')
-      setIcon('📚')
+      onSubjectUpdated(data)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create subject')
+      setError(err instanceof Error ? err.message : 'Failed to update subject')
     } finally {
       setLoading(false)
     }
@@ -62,18 +71,18 @@ export function AddSubjectModal({ isOpen, onClose, onSubjectCreated, userId }: A
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-semibold mb-1">Create New Subject</h2>
+        <h2 className="text-xl font-semibold mb-1">Edit Subject</h2>
         <p className="text-sm text-neutral-500 mb-6">
-          Add a new subject to organize your learning materials
+          Update the name and icon for your subject
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="subjectName" className="block text-sm font-medium mb-2">
+            <label htmlFor="editSubjectName" className="block text-sm font-medium mb-2">
               Subject Name
             </label>
             <input
-              id="subjectName"
+              id="editSubjectName"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -122,7 +131,7 @@ export function AddSubjectModal({ isOpen, onClose, onSubjectCreated, userId }: A
               disabled={loading || !name.trim()}
               className="flex-1 py-2.5 bg-black text-white rounded-xl text-sm font-medium hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating...' : 'Create Subject'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

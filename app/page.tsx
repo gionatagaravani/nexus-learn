@@ -33,11 +33,15 @@ export default function Home() {
   };
 
   useEffect(() => {
+    let mounted = true;
     if (user) {
-      fetchSubjects();
+      fetchSubjects().then(() => {
+        if (!mounted) return;
+      });
     } else {
       setLoading(false);
     }
+    return () => { mounted = false; };
   }, [user, supabase]);
 
   const handleSubjectCreated = (newSubject: any) => {
@@ -58,13 +62,13 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 pt-6 pb-8">
         <header>
           <h1 className="text-2xl font-semibold tracking-tight text-black">
             Welcome back, {displayName}
           </h1>
           <p className="text-sm text-neutral-500 mt-1 font-medium">
-            Here's your learning overview for today.
+            Here&apos;s your learning overview for today.
           </p>
         </header>
 
@@ -177,8 +181,9 @@ export default function Home() {
                   className="block group"
                 >
                   <div className="bg-white p-5 rounded-[12px] border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] group-hover:border-black/[0.15] group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all">
-                    <h3 className="font-semibold text-[15px] text-black mb-5">
-                      {subject.name}
+                    <h3 className="font-semibold text-[15px] text-black mb-5 flex items-center gap-2">
+                      {subject.icon && <span className="text-lg leading-none">{subject.icon}</span>}
+                      <span className="truncate">{subject.name}</span>
                     </h3>
                     <div className="flex items-center justify-between text-[12px] text-neutral-500 font-medium">
                       <span className="flex items-center gap-1.5">

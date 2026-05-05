@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { BookOpen, FileText, ArrowRight, Clock, FolderPlus, Trash2, Edit2 } from "lucide-react";
+import { BookOpen, FileText, ArrowRight, Clock, FolderPlus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
@@ -74,11 +74,11 @@ export default function SubjectsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 pt-6 pb-8">
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-black">
-              {displayName}'s Subjects
+              {displayName}&apos;s Subjects
             </h1>
             <p className="text-sm text-neutral-500 mt-1 font-medium">
               {subjects.length} subject{subjects.length !== 1 ? 's' : ''}
@@ -122,8 +122,8 @@ export default function SubjectsPage() {
                   className="p-5 block"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-black/5 flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-black" />
+                    <div className="w-10 h-10 rounded-lg bg-black/5 flex items-center justify-center text-xl">
+                      {subject.icon || <BookOpen className="w-5 h-5 text-black" />}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button

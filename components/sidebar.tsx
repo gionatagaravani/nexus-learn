@@ -189,7 +189,11 @@ export function Sidebar({
                       title={isCollapsed ? subject.name : undefined}
                       className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-neutral-500 hover:text-black hover:bg-black/[0.03] transition-colors ${isCollapsed ? 'justify-center' : 'text-left'}`}
                     >
-                      <FolderOpen className={`w-4 h-4 shrink-0 ${subject.open && !isCollapsed ? 'text-black' : 'text-neutral-400'}`} strokeWidth={subject.open && !isCollapsed ? 2.5 : 2} />
+                      {subject.icon ? (
+                        <span className="text-base leading-none w-4 h-4 flex items-center justify-center shrink-0">{subject.icon}</span>
+                      ) : (
+                        <FolderOpen className={`w-4 h-4 shrink-0 ${subject.open && !isCollapsed ? 'text-black' : 'text-neutral-400'}`} strokeWidth={subject.open && !isCollapsed ? 2.5 : 2} />
+                      )}
                       {!isCollapsed && <span className="flex-1 truncate">{subject.name}</span>}
                     </button>
                     {subject.open && !isCollapsed && (

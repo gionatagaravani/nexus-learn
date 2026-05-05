@@ -16,7 +16,7 @@ interface Quiz {
   completed_at: string | null;
 }
 
-export function ExercisesTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
+export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: string; userId?: string; isScrolled?: boolean }) {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -113,49 +113,66 @@ export function ExercisesTab({ subjectId, userId }: { subjectId: string; userId?
   return (
     <div className="flex flex-col h-full gap-6">
        
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
-          {/* Main action card */}
+       <div className={`
+         grid transition-all duration-300 gap-6
+         ${isScrolled 
+           ? 'sticky top-[125px] z-10 bg-[#FAFAFA]/95 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-black/[0.04] grid-cols-3 md:grid-cols-4 items-center shadow-sm' 
+           : 'grid-cols-1 md:grid-cols-3 mb-2'}
+       `}>
+          {/* Main action card / button */}
           <button 
             onClick={handleGenerateQuiz}
             disabled={isGenerating}
-            className="bg-black rounded-[12px] p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between min-h-[160px] cursor-pointer group hover:bg-neutral-900 transition-colors text-left disabled:opacity-70 disabled:cursor-not-allowed"
+            className={`
+              bg-black rounded-[12px] text-white shadow-md relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:bg-neutral-900 transition-all text-left disabled:opacity-70 disabled:cursor-not-allowed
+              ${isScrolled ? 'p-3 min-h-[50px] md:col-span-2' : 'p-6 min-h-[160px]'}
+            `}
           >
-             <div className="absolute top-0 right-0 p-4 opacity-5">
-               <Plus className="w-24 h-24 text-white" />
-             </div>
+             {!isScrolled && (
+               <div className="absolute top-0 right-0 p-4 opacity-5">
+                 <Plus className="w-24 h-24 text-white" />
+               </div>
+             )}
              <div className="relative z-10">
-                <h3 className="text-[18px] font-semibold mb-1">Generate Practice</h3>
-                <p className="text-neutral-400 text-sm max-w-[200px]">Create a custom quiz from your materials.</p>
+                <h3 className={`font-semibold ${isScrolled ? 'text-[14px]' : 'text-[18px] mb-1'}`}>
+                  {isScrolled ? 'Generate Quiz' : 'Generate Practice'}
+                </h3>
+                {!isScrolled && <p className="text-neutral-400 text-sm max-w-[200px]">Create a custom quiz from your materials.</p>}
              </div>
-             <div className="relative z-10 flex items-center gap-2 mt-4 text-[13px] font-semibold text-white group-hover:gap-2.5 transition-all">
+             <div className={`relative z-10 flex items-center gap-2 text-[13px] font-semibold text-white group-hover:gap-2.5 transition-all ${isScrolled ? 'mt-0' : 'mt-4'}`}>
                {isGenerating ? (
-                 <>Generating... <Loader2 className="w-4 h-4 text-white animate-spin" /></>
+                 <Loader2 className="w-4 h-4 text-white animate-spin" />
                ) : (
-                 <>Start Generating <PlayCircle className="w-4 h-4 text-white" /></>
+                 <PlayCircle className={`w-4 h-4 text-white ${isScrolled ? 'hidden md:block' : ''}`} />
                )}
+               {isScrolled ? (isGenerating ? 'Generating...' : 'Start') : (isGenerating ? 'Generating...' : 'Start Generating')}
              </div>
           </button>
 
-          <div className="bg-white rounded-[12px] border border-black/[0.08] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-center gap-2">
-             <div className="flex items-center gap-2 text-neutral-500 font-semibold text-[13px]">
-               <CheckCircle2 className="w-4 h-4 text-emerald-500" strokeWidth={2.5}/>
-               Average Score
+          <div className={`bg-white rounded-[12px] border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-center transition-all ${isScrolled ? 'p-2 gap-0 items-center md:items-start' : 'p-6 gap-2'}`}>
+             <div className={`flex items-center gap-2 text-neutral-500 font-semibold ${isScrolled ? 'text-[10px] uppercase tracking-wider' : 'text-[13px]'}`}>
+               <CheckCircle2 className={`${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} text-emerald-500`} strokeWidth={2.5}/>
+               {isScrolled ? 'Avg' : 'Average Score'}
              </div>
-             <div className="text-3xl font-semibold text-black tracking-tight">
+             <div className={`font-semibold text-black tracking-tight ${isScrolled ? 'text-[16px]' : 'text-3xl'}`}>
                {stats.avgScore > 0 ? `${stats.avgScore}%` : '--%'}
              </div>
-             <div className="text-[13px] text-neutral-500 font-medium">
-               {stats.completedCount > 0 ? `Based on ${stats.completedCount} quizzes` : 'Complete quizzes to see stats'}
-             </div>
+             {!isScrolled && (
+               <div className="text-[13px] text-neutral-500 font-medium">
+                 {stats.completedCount > 0 ? `Based on ${stats.completedCount} quizzes` : 'Complete quizzes to see stats'}
+               </div>
+             )}
           </div>
           
-          <div className="bg-white rounded-[12px] border border-black/[0.08] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-center gap-2">
-             <div className="flex items-center gap-2 text-neutral-500 font-semibold text-[13px]">
-               <Clock className="w-4 h-4 text-neutral-400" strokeWidth={2.5} />
-               Quizzes Completed
+          <div className={`bg-white rounded-[12px] border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-center transition-all ${isScrolled ? 'p-2 gap-0 items-center md:items-start' : 'p-6 gap-2'}`}>
+             <div className={`flex items-center gap-2 text-neutral-500 font-semibold ${isScrolled ? 'text-[10px] uppercase tracking-wider' : 'text-[13px]'}`}>
+               <Clock className={`${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} text-neutral-400`} strokeWidth={2.5} />
+               {isScrolled ? 'Done' : 'Quizzes Completed'}
              </div>
-             <div className="text-3xl font-semibold text-black tracking-tight">{stats.completedCount}</div>
-             <div className="text-[13px] text-neutral-500 font-medium">Out of {quizzes.length} available</div>
+             <div className={`font-semibold text-black tracking-tight ${isScrolled ? 'text-[16px]' : 'text-3xl'}`}>{stats.completedCount}</div>
+             {!isScrolled && (
+               <div className="text-[13px] text-neutral-500 font-medium">Out of {quizzes.length} available</div>
+             )}
           </div>
        </div>
 

@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, userId } = body
+    const { name, icon, userId } = body
 
-    if (!title || !userId) {
+    if (!name || !userId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     const { data: subject, error } = await supabase
       .from('subjects')
       .insert({
-        title,
-        description,
+        name,
+        icon: icon || '📚',
         user_id: userId,
       })
       .select()

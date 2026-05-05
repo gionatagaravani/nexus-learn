@@ -9,11 +9,14 @@ import {
   BookOpen,
   Library,
   Settings2,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { MaterialsTab } from "./materials-tab";
 import { ChatTab } from "./chat-tab";
 import { ExercisesTab } from "./exercises-tab";
 import { NotesTab } from "./notes-tab";
+import { EditSubjectModal } from "@/components/edit-subject-modal";
 
 type TabType = "materials" | "notes" | "chat" | "exercises";
 
@@ -21,7 +24,8 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
   const [activeTab, setActiveTab] = useState<TabType>("materials");
   const [subject, setSubject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<any>(null);
   const { user, supabase } = useAuth();
 
   const fetchSubject = async () => {
@@ -51,22 +55,22 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
     }
   }, [user, supabase]);
 
+  const isFullHeightTab = activeTab === "chat" || activeTab === "notes";
+
   useEffect(() => {
     const container = document.getElementById('main-scroll-container');
     if (!container) return;
 
-    const handleScroll = () => {
-      const currentScroll = container.scrollTop;
-      setIsScrolled(prev => {
-        if (!prev && currentScroll > 40) return true;
-        if (prev && currentScroll < 10) return false;
-        return prev;
-      });
-    };
+    if (isFullHeightTab) {
+      container.style.overflow = 'hidden';
+    } else {
+      container.style.overflow = 'auto';
+    }
 
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+    return () => {
+      container.style.overflow = 'auto';
+    };
+  }, [isFullHeightTab]);
 
   if (loading) {
     return (
@@ -84,7 +88,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
         <div className="flex flex-col items-center justify-center h-96 text-center">
           <Library className="w-16 h-16 text-neutral-300 mb-4" />
           <h2 className="text-xl font-semibold text-black mb-2">Subject not found</h2>
-          <p className="text-neutral-500">The subject you're looking for doesn't exist or you don't have access to it.</p>
+          <p className="text-neutral-500">The subject you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
         </div>
       </DashboardLayout>
     );
@@ -92,35 +96,56 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
 
   const subjectId = subject.id;
 
+  const handleSubjectUpdated = (updatedSubject: any) => {
+    setSubject(updatedSubject);
+  };
+
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full relative">
+      <div className={`flex-1 flex flex-col relative ${isFullHeightTab ? 'h-[calc(100vh-56px)] pb-0' : 'min-h-full pb-8'}`}>
         {/* Sticky Header & Tabs Container */}
-        <div className={`sticky top-0 z-20 bg-[#FAFAFA] transition-all duration-300 flex flex-col ${isScrolled ? 'pt-2 pb-3 -mx-4 px-4 md:-mx-8 md:px-8 shadow-sm border-b border-black/[0.04] gap-3' : 'pt-0 pb-6 gap-6'}`}>
+        <div className={`sticky top-0 z-30 bg-[#FAFAFA] transition-all duration-300 flex flex-col -mx-4 px-4 md:-mx-8 md:px-8 border-b border-black/[0.04] ${isHeaderCollapsed ? 'pt-2 pb-3 shadow-sm gap-3' : 'pt-6 pb-6 gap-6'}`}>
           <header className={`
             flex items-start justify-between bg-white rounded-[12px] border border-black/[0.08] 
             transition-all duration-300 ease-in-out overflow-hidden shrink-0
-            ${isScrolled ? 'p-3 items-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]'}
+            ${isHeaderCollapsed ? 'p-3 items-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]'}
           `}>
-            <div className={`flex flex-col transition-all duration-300 ${isScrolled ? 'gap-0' : 'gap-1'}`}>
+            <div className={`flex flex-col transition-all duration-300 ${isHeaderCollapsed ? 'gap-0' : 'gap-1'}`}>
                
-               <div className={`flex items-center gap-2 text-neutral-500 font-semibold uppercase tracking-widest transition-all duration-300 overflow-hidden ${isScrolled ? 'h-0 opacity-0 mb-0 text-[0px]' : 'h-5 opacity-100 mb-2 text-[13px]'}`}>
+               <div className={`flex items-center gap-2 text-neutral-500 font-semibold uppercase tracking-widest transition-all duration-300 overflow-hidden ${isHeaderCollapsed ? 'h-0 opacity-0 mb-0 text-[0px]' : 'h-5 opacity-100 mb-2 text-[13px]'}`}>
                  <Library className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5}/>
                  Subject
                </div>
                
-               <h1 className={`font-semibold tracking-tight text-black transition-all duration-300 ${isScrolled ? 'text-lg' : 'text-2xl'}`}>
+               <h1 className={`font-semibold tracking-tight text-black transition-all duration-300 flex items-center gap-3 ${isHeaderCollapsed ? 'text-lg' : 'text-2xl'}`}>
+                 {subject.icon && <span className="text-[1.1em] leading-none">{subject.icon}</span>}
                  {subject.name}
                </h1>
                
-               <div className={`text-neutral-500 font-medium transition-all duration-300 overflow-hidden ${isScrolled ? 'h-0 opacity-0 text-[0px]' : 'h-5 opacity-100 text-[14px] mt-1'}`}>
-                 Created {new Date(subject.created_at).toLocaleDateString()}
-               </div>
+               {!isHeaderCollapsed && (
+                 <div className="text-neutral-500 font-medium transition-all duration-300 overflow-hidden h-5 opacity-100 text-[14px] mt-1">
+                   Created {new Date(subject.created_at).toLocaleDateString()}
+                 </div>
+               )}
                
             </div>
-            <button className="h-8 w-8 flex items-center justify-center shrink-0 rounded-md border border-transparent text-neutral-400 hover:text-black hover:bg-black/[0.04] transition-colors">
-              <Settings2 className="w-4 h-4" />
-            </button>
+            
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                className="h-8 w-8 flex items-center justify-center shrink-0 rounded-md border border-transparent text-neutral-400 hover:text-black hover:bg-black/[0.04] transition-colors"
+                title={isHeaderCollapsed ? "Expand Header" : "Collapse Header"}
+              >
+                {isHeaderCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+              </button>
+              <button 
+                onClick={() => setEditingSubject(subject)}
+                className="h-8 w-8 flex items-center justify-center shrink-0 rounded-md border border-transparent text-neutral-400 hover:text-black hover:bg-black/[0.04] transition-colors"
+                title="Edit subject"
+              >
+                <Settings2 className="w-4 h-4" />
+              </button>
+            </div>
           </header>
 
           {/* Tabs System */}
@@ -133,16 +158,26 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
         </div>
 
         {/* Dynamic Content Area */}
-        <div className="flex-1 overflow-hidden min-h-[calc(100vh-120px)] pb-12">
+        <div className={`flex-1 flex flex-col min-h-0 ${isFullHeightTab ? 'overflow-hidden' : ''}`}>
           {activeTab === "materials" && <MaterialsTab subjectId={subjectId} userId={user?.id} />}
-          {activeTab === "notes" && <NotesTab subjectId={subjectId} userId={user?.id} />}
+          {activeTab === "notes" && <NotesTab subjectId={subjectId} userId={user?.id} isScrolled={isHeaderCollapsed} />}
           {activeTab === "chat" && <ChatTab subjectId={subjectId} userId={user?.id} />}
-          {activeTab === "exercises" && <ExercisesTab subjectId={subjectId} userId={user?.id} />}
+          {activeTab === "exercises" && <ExercisesTab subjectId={subjectId} userId={user?.id} isScrolled={isHeaderCollapsed} />}
         </div>
       </div>
+
+      {user && editingSubject && (
+        <EditSubjectModal
+          isOpen={!!editingSubject}
+          onClose={() => setEditingSubject(null)}
+          onSubjectUpdated={handleSubjectUpdated}
+          subject={editingSubject}
+        />
+      )}
     </DashboardLayout>
   );
 }
+
 
 function TabButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
   return (

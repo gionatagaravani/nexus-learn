@@ -142,15 +142,20 @@ export async function generateText(prompt: string): Promise<string> {
  */
 export async function summarizeDocument(content: string): Promise<string> {
   try {
-    const prompt = `Summarize the following content in a clear, concise manner suitable for studying:
+    const prompt = `Summarize the following content in a clear, concise manner suitable for university studying.
+Use Markdown formatting for structure.
 
+Requirements:
+- Start with a clear Title (H1)
+- Use H2 for sections like "Key Concepts", "Main Takeaways", "Important Definitions"
+- Use bullet points for clarity
+- Use bold text for key terms
+- Keep it structured and easy to read
+
+Content:
 ${content}
 
-Provide:
-1. Key concepts (bulleted list)
-2. Main takeaways
-3. Important definitions
-Keep it under 500 words.`
+Provide the response in Markdown format. Keep it under 600 words.`
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',

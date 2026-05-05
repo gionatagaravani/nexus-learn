@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, FileText, MoreVertical, Search, FileImage, FileBarChart, X } from "lucide-react";
+import { UploadCloud, FileText, MoreVertical, Search, FileImage, FileBarChart, X, Sparkles, Loader2, Save, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Material {
   id: string
@@ -17,6 +20,10 @@ export function MaterialsTab({ subjectId, userId }: { subjectId: string; userId?
   const [materials, setMaterials] = useState<Material[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
+  const [summaryData, setSummaryData] = useState<{ summary: string, filename: string } | null>(null);
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMaterials = async () => {
@@ -69,6 +76,74 @@ export function MaterialsTab({ subjectId, userId }: { subjectId: string; userId?
       alert("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleSummarize = async (materialId: string) => {
+    setIsSummarizing(materialId);
+    setActiveMenu(null);
+    try {
+      const response = await fetch("/api/materials/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materialId }),
+      });
+
+      if (!response.ok) throw new Error("Summarization failed");
+
+      const data = await response.json();
+      setSummaryData(data);
+    } catch (error) {
+      console.error("Summarization error:", error);
+      alert("Failed to generate summary. Please try again.");
+    } finally {
+      setIsSummarizing(null);
+    }
+  };
+
+  const handleDelete = async (materialId: string) => {
+    if (!confirm("Are you sure you want to delete this material? This action cannot be undone.")) return;
+
+    try {
+      const response = await fetch(`/api/materials/delete?materialId=${materialId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete material");
+
+      setMaterials(prev => prev.filter(m => m.id !== materialId));
+      setActiveMenu(null);
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete material.");
+    }
+  };
+
+  const handleSaveAsNote = async () => {
+    if (!summaryData || !userId) return;
+
+    setIsSavingNote(true);
+    try {
+      const response = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subjectId,
+          userId,
+          title: `Summary: ${summaryData.filename}`,
+          content: summaryData.summary,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save note");
+
+      alert("Summary saved to your notes!");
+      setSummaryData(null);
+    } catch (error) {
+      console.error("Save note error:", error);
+      alert("Failed to save summary as note.");
+    } finally {
+      setIsSavingNote(false);
     }
   };
 
@@ -140,7 +215,7 @@ export function MaterialsTab({ subjectId, userId }: { subjectId: string; userId?
         {filteredMaterials.map((material) => (
           <div
             key={material.id}
-            className="bg-white rounded-[12px] border border-black/[0.08] p-5 flex gap-4 items-start shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all group cursor-pointer"
+            className="bg-white rounded-[12px] border border-black/[0.08] p-5 flex gap-4 items-start shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] transition-all group cursor-pointer relative"
           >
             <div className="p-3 rounded-lg bg-black/[0.04] text-black">
               {getFileIcon(material.file_type)}
@@ -153,13 +228,65 @@ export function MaterialsTab({ subjectId, userId }: { subjectId: string; userId?
                 {formatFileSize(material.file_size)}
               </p>
               <div className="flex items-center gap-3 mt-3 text-[12px] font-semibold text-black opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="hover:underline">Summarize</span>
-                <span className="hover:underline">Chat</span>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSummarize(material.id);
+                  }}
+                  disabled={isSummarizing === material.id}
+                  className="hover:underline flex items-center gap-1 disabled:opacity-50"
+                >
+                  {isSummarizing === material.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3" />
+                  )}
+                  Summarize
+                </button>
               </div>
             </div>
-            <button className="text-neutral-400 hover:text-black transition-colors rounded-md hover:bg-black/[0.04] p-1">
-              <MoreVertical className="w-4 h-4" strokeWidth={2} />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenu(activeMenu === material.id ? null : material.id);
+                }}
+                className="text-neutral-400 hover:text-black transition-colors rounded-md hover:bg-black/[0.04] p-1"
+              >
+                <MoreVertical className="w-4 h-4" strokeWidth={2} />
+              </button>
+              
+              <AnimatePresence>
+                {activeMenu === material.id && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenu(null);
+                      }}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-xl border border-black/[0.08] z-20 py-1"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(material.id);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         ))}
 
@@ -183,6 +310,70 @@ export function MaterialsTab({ subjectId, userId }: { subjectId: string; userId?
           )}
         </div>
       </div>
+
+      {/* Summary Modal */}
+      <AnimatePresence>
+        {summaryData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]"
+            >
+              <div className="p-6 border-b border-black/[0.05] flex items-center justify-between bg-white sticky top-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-black text-white">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-black">AI Summary</h3>
+                    <p className="text-xs text-neutral-500 font-medium truncate max-w-[300px]">
+                      {summaryData.filename}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSummaryData(null)}
+                  className="p-2 hover:bg-black/[0.05] rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-neutral-400" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto bg-white flex-1">
+                <div className="prose prose-neutral max-w-none prose-h1:text-xl prose-h2:text-lg prose-p:text-sm prose-li:text-sm leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {summaryData.summary}
+                  </ReactMarkdown>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-black/[0.05] bg-white flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setSummaryData(null)}
+                  className="px-4 h-10 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleSaveAsNote}
+                  disabled={isSavingNote}
+                  className="px-5 h-10 rounded-xl bg-black text-white text-sm font-semibold flex items-center gap-2 hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                >
+                  {isSavingNote ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save as Note
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

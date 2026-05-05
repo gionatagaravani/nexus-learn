@@ -2,7 +2,8 @@
 
 import { 
   Edit3, Clock, Plus, Trash2, Save, Loader2, Wand2, Search, 
-  Eye, Bold, Italic, Heading1, Heading2, List, Type 
+  Eye, Bold, Italic, Heading1, Heading2, List, Type,
+  Maximize2, Minimize2, X
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -23,7 +24,8 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isPreview, setIsPreview] = useState(false);
+  const [isPreview, setIsPreview] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchNotes = useCallback(async () => {
@@ -48,6 +50,16 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
   useEffect(() => {
     fetchNotes();
   }, [fetchNotes]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen]);
 
   const handleCreateNote = async () => {
     if (!userId) return;
@@ -218,9 +230,14 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
   };
 
   return (
-    <div className="flex h-[calc(100vh-280px)] border border-black/[0.08] rounded-[12px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      {/* Sidebar for Notes List */}
-      <div className="w-1/3 border-r border-black/[0.08] bg-[#FAFAFA] flex flex-col hidden md:flex min-w-[280px]">
+    <div className={`flex border border-black/[0.08] rounded-[12px] overflow-hidden bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all
+      ${isFullscreen 
+        ? 'fixed inset-4 z-[100] h-[calc(100vh-32px)]' 
+        : 'h-[calc(100vh-280px)]'
+      }`}
+    >
+      {/* Sidebar for Notes List - Hidden in fullscreen if you prefer, but usually good to keep for navigation or toggle it */}
+      <div className={`${isFullscreen ? 'w-[240px]' : 'w-1/3 min-w-[280px]'} border-r border-black/[0.08] bg-[#FAFAFA] flex flex-col hidden md:flex`}>
          <div className="p-4 border-b border-black/[0.08] flex justify-between items-center bg-[#FAFAFA]/80 backdrop-blur-sm">
             <h3 className="font-semibold text-black text-[11px] uppercase tracking-[0.1em]">Study Notes</h3>
             <button 
@@ -311,19 +328,28 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
                    onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
                    placeholder="Note Title"
                  />
-                 <div className="flex items-center gap-3">
-                   {isSaving && <Loader2 className="w-3.5 h-3.5 text-neutral-300 animate-spin" />}
+                 <div className="flex items-center gap-2">
+                   {isSaving && <Loader2 className="w-3.5 h-3.5 text-neutral-300 animate-spin mr-1" />}
+                   
                    <button 
                      onClick={handleGenerateAINotes}
                      disabled={isGenerating}
-                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold text-black bg-[#FAFAFA] border border-black/[0.1] hover:bg-black/[0.04] shadow-sm transition-all disabled:opacity-50"
+                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-white border border-black/[0.08] text-neutral-500 hover:text-black shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] transition-all disabled:opacity-50"
+                     title="AI Enhance"
                    >
                      {isGenerating ? (
-                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                       <Loader2 className="w-4 h-4 animate-spin" />
                      ) : (
-                       <Wand2 className="w-3.5 h-3.5" />
+                       <Wand2 className="w-4 h-4" />
                      )}
-                     AI Enhance
+                   </button>
+
+                   <button 
+                     onClick={() => setIsFullscreen(!isFullscreen)}
+                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-white border border-black/[0.08] text-neutral-500 hover:text-black shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] transition-all"
+                     title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                   >
+                     {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                    </button>
                  </div>
                </div>
@@ -344,13 +370,13 @@ export function NotesTab({ subjectId, userId }: { subjectId: string; userId?: st
                       onClick={() => setIsPreview(false)}
                       className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all ${!isPreview ? 'bg-black text-white shadow-sm' : 'text-neutral-500 hover:text-black'}`}
                     >
-                      <Edit3 className="w-3 h-3" /> Edit
+                      Edit
                     </button>
                     <button 
                       onClick={() => setIsPreview(true)}
                       className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all ${isPreview ? 'bg-black text-white shadow-sm' : 'text-neutral-500 hover:text-black'}`}
                     >
-                      <Eye className="w-3 h-3" /> Preview
+                      Preview
                     </button>
                   </div>
                </div>

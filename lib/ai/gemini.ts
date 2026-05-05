@@ -107,6 +107,24 @@ Return only the JSON, no additional text.`
 }
 
 /**
+ * Generic text generation
+ */
+export async function generateText(prompt: string): Promise<string> {
+  try {
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    })
+
+    // In @google/genai 1.x, the text property is directly available
+    return result.text || ''
+  } catch (error) {
+    console.error('Text generation error:', error)
+    throw new Error('Failed to generate text from AI')
+  }
+}
+
+/**
  * Summarize a document
  */
 export async function summarizeDocument(content: string): Promise<string> {

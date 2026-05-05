@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, materialId, userId, limit = 5 } = await request.json()
+    const { query, materialId, subjectId, limit = 5 } = await request.json()
 
     if (!query) {
       return NextResponse.json(
@@ -20,32 +20,21 @@ export async function POST(request: NextRequest) {
     // Generate embedding for query
     const queryEmbedding = await generateEmbedding(query)
 
-    // Perform similarity search using pgvector
-    let dbQuery = supabase.from('chunks').select('*')
+    // Perform similarity search using pgvector via RPC
+    const { data: results, error } = await supabase.rpc('match_chunks', {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.5,
+      match_count: limit,
+      p_material_id: materialId || null,
+      p_subject_id: subjectId || null,
+    })
 
-    if (materialId) {
-      dbQuery = dbQuery.eq('material_id', materialId)
+    if (error) {
+      console.error('RPC search error:', error)
+      throw error
     }
 
-    const { data: chunks, error } = await dbQuery
-
-    if (error) throw error
-    if (!chunks) {
-      return NextResponse.json({ results: [] })
-    }
-
-    // Calculate cosine similarity (client-side for now, ideally use pgvector)
-    // pgvector would be: WHERE embedding <=> $1 ORDER BY embedding <=> $1
-    const results = chunks
-      .map((doc) => ({
-        ...doc,
-        similarity: cosineSimilarity(queryEmbedding, doc.embedding || []),
-      }))
-      .filter((doc) => doc.similarity > 0.5) // Threshold
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, limit)
-
-    return NextResponse.json({ results })
+    return NextResponse.json({ results: results || [] })
   } catch (error) {
     console.error('Similarity search error:', error)
     return NextResponse.json(
@@ -53,21 +42,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-// Simple cosine similarity for client-side
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (!a || !b || a.length !== b.length) return 0
-
-  let dotProduct = 0
-  let normA = 0
-  let normB = 0
-
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i]
-    normA += a[i] * a[i]
-    normB += b[i] * b[i]
-  }
-
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
 }

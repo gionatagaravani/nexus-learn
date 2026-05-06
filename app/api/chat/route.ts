@@ -123,22 +123,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // RAG Context
+    // RAG Context (Karpathy-style: Wiki + Chunks)
     let context = ''
     let sources: string[] = []
     if (lastUserMessage.content.trim()) {
       try {
         const queryEmbedding = await generateEmbedding(lastUserMessage.content)
-        const { data: chunks } = await supabase.rpc('match_chunks', {
+        
+        // 1. Search the Wiki (Synthesized, high-level knowledge)
+        const { data: wikiResults } = await supabase.rpc('match_wiki_pages', {
           query_embedding: queryEmbedding,
-          match_threshold: 0.5,
-          match_count: 5,
+          match_threshold: 0.4,
+          match_count: 2,
           p_subject_id: subjectId,
         })
-        if (chunks && chunks.length > 0) {
-          context = chunks.map((r: any) => r.content).join('\n\n---\n\n')
-          sources = chunks.map((r: any) => r.id)
+
+        // 2. Search Raw Chunks (Detailed, specific evidence)
+        const { data: chunkResults } = await supabase.rpc('match_chunks', {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.5,
+          match_count: 3,
+          p_subject_id: subjectId,
+        })
+
+        let contextParts: string[] = []
+        
+        if (wikiResults && wikiResults.length > 0) {
+          contextParts.push("### Synthesized Wiki Knowledge:")
+          wikiResults.forEach((w: any) => {
+            contextParts.push(`Title: ${w.title}\n${w.content}`)
+          })
         }
+
+        if (chunkResults && chunkResults.length > 0) {
+          contextParts.push("### Raw Study Material Excerpts:")
+          chunkResults.forEach((c: any) => {
+            contextParts.push(c.content)
+            sources.push(c.id)
+          })
+        }
+
+        context = contextParts.join('\n\n---\n\n')
       } catch (error) {
         console.error('RAG error:', error)
       }

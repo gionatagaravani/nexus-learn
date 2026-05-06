@@ -5,6 +5,7 @@ import { parsePDF, chunkPDF } from '@/lib/parsers/pdf'
 import { parseImage } from '@/lib/parsers/image'
 import { parseDocumentWithAI } from '@/lib/parsers/document'
 import { generateEmbedding, generateEmbeddingsBatch } from '@/lib/embeddings/gemini'
+import { updateWikiForSubject } from '@/lib/ai/wiki'
 
 export const runtime = 'nodejs'
 
@@ -65,6 +66,8 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    let processedChunks: string[] = []
+
     // Process file based on type
     if (uploadResult.type === 'pdf') {
       console.log(`[Upload] Processing PDF: ${material.id}`)
@@ -75,10 +78,10 @@ export async function POST(request: NextRequest) {
       console.log(`[Upload] PDF chunked: ${chunks.length} chunks`)
 
       if (chunks.length > 0) {
+        processedChunks = chunks.map(c => c.text)
         // Generate embeddings for all chunks
-        const chunkTexts = chunks.map(c => c.text)
         console.log(`[Upload] Generating embeddings for ${chunks.length} chunks...`)
-        const embeddings = await generateEmbeddingsBatch(chunkTexts)
+        const embeddings = await generateEmbeddingsBatch(processedChunks)
         console.log(`[Upload] Embeddings generated: ${embeddings.length}`)
 
         // Store chunks in chunks table with embeddings
@@ -114,6 +117,7 @@ export async function POST(request: NextRequest) {
       
       // Generate embedding for the image text/description
       const contentToEmbed = `${parsedImage.description}\n\n${parsedImage.text}`
+      processedChunks = [contentToEmbed]
       console.log(`[Upload] Generating embedding for image content...`)
       const embedding = await generateEmbedding(contentToEmbed)
 
@@ -144,6 +148,7 @@ export async function POST(request: NextRequest) {
       
       const parsedDoc = await parseDocumentWithAI(buffer, file.type, file.name)
       const contentToEmbed = `${parsedDoc.description}\n\n${parsedDoc.text}`
+      processedChunks = [contentToEmbed]
       
       console.log(`[Upload] Generating embedding for ${uploadResult.type} content...`)
       const embedding = await generateEmbedding(contentToEmbed)
@@ -169,6 +174,21 @@ export async function POST(request: NextRequest) {
         throw chunkError
       }
       console.log(`[Upload] AI extracted chunk stored for ${uploadResult.type}`)
+    }
+
+    // Karpathy-style RAG: Synthesize findings into the Wiki
+    if (processedChunks.length > 0) {
+      console.log(`[Wiki] Triggering wiki synthesis for subject: ${subjectId}`)
+      // For very large documents, we might only want to send key chunks or a summary
+      // to avoid hitting context limits or high costs. 
+      // For now, we'll send a representative sample if it's too large.
+      const sampleChunks = processedChunks.length > 15 
+        ? [processedChunks[0], ...processedChunks.slice(1, -1).sort(() => 0.5 - Math.random()).slice(0, 12), processedChunks[processedChunks.length-1]]
+        : processedChunks
+        
+      // Run this in background to avoid blocking the response
+      updateWikiForSubject(subjectId, userIdToUse, sampleChunks)
+        .catch(err => console.error('[Wiki] Synthesis failed:', err))
     }
 
     return NextResponse.json({

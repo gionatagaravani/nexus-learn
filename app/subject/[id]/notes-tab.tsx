@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 interface Note {
   id: string;
@@ -27,6 +28,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
   const [isPreview, setIsPreview] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { t, locale } = useTranslation();
 
   const fetchNotes = useCallback(async () => {
     if (!userId) return;
@@ -70,7 +72,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
         body: JSON.stringify({
           subjectId,
           userId,
-          title: "New Note",
+          title: t('notes.newNote'),
           content: "",
         }),
       });
@@ -123,7 +125,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
   };
 
   const handleDeleteNote = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this note?")) return;
+    if (!confirm(t('notes.deleteConfirm'))) return;
     try {
       const response = await fetch(`/api/notes/${id}`, {
         method: "DELETE",
@@ -150,14 +152,15 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
         body: JSON.stringify({
           subjectId,
           userId,
-          prompt: activeNote && activeNote.title !== "New Note" 
+          prompt: activeNote && activeNote.title !== t('notes.newNote') 
             ? `Generate detailed notes about: ${activeNote.title}` 
-            : "A comprehensive summary of the course materials."
+            : "A comprehensive summary of the course materials.",
+          lingua: locale
         }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to generate notes");
+      if (!response.ok) throw new Error(data.error || t('notes.generateFailed'));
       
       if (activeNote) {
         handleUpdateActiveNote({ content: data.notes });
@@ -169,7 +172,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
           body: JSON.stringify({
             subjectId,
             userId,
-            title: "AI Generated Summary",
+            title: t('notes.aiGenerated'),
             content: data.notes,
           }),
         });
@@ -181,7 +184,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
       }
     } catch (error) {
       console.error("Error generating AI notes:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate notes.");
+      alert(error instanceof Error ? error.message : t('notes.generateFailed'));
     } finally {
       setIsGenerating(false);
     }
@@ -224,8 +227,8 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
     const now = new Date();
     const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600));
     
-    if (diffHours < 1) return "Just now";
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 1) return t('common.justNow');
+    if (diffHours < 24) return t('common.hoursAgo', { count: diffHours });
     return date.toLocaleDateString();
   };
 
@@ -239,7 +242,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
       {/* Sidebar for Notes List - Hidden in fullscreen if you prefer, but usually good to keep for navigation or toggle it */}
       <div className={`${isFullscreen ? 'w-[240px]' : 'w-1/3 min-w-[280px]'} border border-black/[0.08] md:rounded-l-[12px] bg-[#FAFAFA] flex flex-col hidden md:flex`}>
          <div className="p-4 border-b border-black/[0.08] flex justify-between items-center bg-[#FAFAFA]/80 backdrop-blur-sm">
-            <h3 className="font-semibold text-black text-[11px] uppercase tracking-[0.1em]">Study Notes</h3>
+            <h3 className="font-semibold text-black text-[11px] uppercase tracking-[0.1em]">{t('notes.title')}</h3>
             <button 
               onClick={handleCreateNote}
               className="h-7 w-7 flex items-center justify-center rounded-md bg-white border border-black/[0.08] text-neutral-500 hover:text-black shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] transition-all"
@@ -253,7 +256,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-neutral-400" />
               <input 
                 type="text" 
-                placeholder="Search notes..." 
+                placeholder={t('notes.searchPlaceholder')} 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-8 pr-3 py-2 bg-white border border-black/[0.06] rounded-lg text-[12px] focus:outline-none focus:ring-1 focus:ring-black/5 placeholder:text-neutral-400"
@@ -268,7 +271,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
               </div>
             ) : filteredNotes.length === 0 ? (
               <div className="text-center py-12 px-4">
-                <p className="text-[12px] text-neutral-400 font-medium">No notes found</p>
+                <p className="text-[12px] text-neutral-400 font-medium">{t('notes.noNotesFound')}</p>
               </div>
             ) : (
               filteredNotes.map((note) => (
@@ -282,10 +285,10 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                     }`}
                 >
                    <span className={`font-semibold text-[13px] ${activeNote?.id === note.id ? 'text-black' : ''} truncate w-full`}>
-                     {note.title || "Untitled Note"}
+                     {note.title || t('notes.untitled')}
                    </span>
                    <span className="text-neutral-500 text-[12px] line-clamp-2 w-full leading-relaxed">
-                     {note.content || "Empty note..."}
+                     {note.content || t('notes.emptyNote')}
                    </span>
                    <div className="flex items-center justify-between mt-1">
                       <span className="text-neutral-400 text-[11px] flex items-center gap-1.5 font-medium">
@@ -326,7 +329,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                    className="text-[15px] font-bold tracking-tight text-black bg-transparent border-none focus:outline-none focus:ring-0 placeholder:text-neutral-300 w-full" 
                    value={activeNote.title}
                    onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
-                   placeholder="Note Title"
+                   placeholder={t('notes.titlePlaceholder')}
                  />
                  <div className="flex items-center gap-2">
                    {isSaving && <Loader2 className="w-3.5 h-3.5 text-neutral-300 animate-spin mr-1" />}
@@ -335,7 +338,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                      onClick={handleGenerateAINotes}
                      disabled={isGenerating}
                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-white border border-black/[0.08] text-neutral-500 hover:text-black shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] transition-all disabled:opacity-50"
-                     title="AI Enhance"
+                     title={t('notes.aiEnhance')}
                    >
                      {isGenerating ? (
                        <Loader2 className="w-4 h-4 animate-spin" />
@@ -347,7 +350,7 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                    <button 
                      onClick={() => setIsFullscreen(!isFullscreen)}
                      className="h-8 w-8 flex items-center justify-center rounded-lg bg-white border border-black/[0.08] text-neutral-500 hover:text-black shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-black/[0.15] transition-all"
-                     title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                     title={isFullscreen ? t('notes.exitFullscreen') : t('notes.fullscreen')}
                    >
                      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                    </button>
@@ -370,13 +373,13 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                       onClick={() => setIsPreview(false)}
                       className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all ${!isPreview ? 'bg-black text-white shadow-sm' : 'text-neutral-500 hover:text-black'}`}
                     >
-                      Edit
+                      {t('common.edit')}
                     </button>
                     <button 
                       onClick={() => setIsPreview(true)}
                       className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all ${isPreview ? 'bg-black text-white shadow-sm' : 'text-neutral-500 hover:text-black'}`}
                     >
-                      Preview
+                      {t('common.preview')}
                     </button>
                   </div>
                </div>
@@ -386,14 +389,14 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                     <textarea
                       ref={textAreaRef}
                       className="w-full h-full p-8 text-[14px] leading-relaxed text-neutral-700 bg-white border-none focus:outline-none focus:ring-0 resize-none placeholder:text-neutral-300 font-medium min-h-full"
-                      placeholder="Start writing your notes or use AI to generate them from your materials..."
+                      placeholder={t('notes.editorPlaceholder')}
                       value={activeNote.content}
                       onChange={(e) => handleUpdateActiveNote({ content: e.target.value })}
                     />
                   ) : (
                     <div className="p-8 prose prose-sm prose-neutral max-w-none">
                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                         {activeNote.content || "*No content yet...*"}
+                         {activeNote.content || t('notes.noContent')}
                        </ReactMarkdown>
                     </div>
                   )}
@@ -405,14 +408,14 @@ export function NotesTab({ subjectId, userId, isScrolled }: { subjectId: string;
                  <Edit3 className="w-8 h-8 opacity-20" />
                </div>
                <div className="text-center">
-                 <p className="text-sm font-semibold text-black">No note selected</p>
-                 <p className="text-xs">Select a note or create a new one to start studying.</p>
+                 <p className="text-sm font-semibold text-black">{t('notes.noSelection')}</p>
+                 <p className="text-xs">{t('notes.selectToStart')}</p>
                </div>
                <button 
                  onClick={handleCreateNote}
                  className="mt-2 px-4 py-2 bg-black text-white text-[12px] font-bold rounded-full hover:bg-neutral-800 transition-all shadow-lg shadow-black/10"
                >
-                 Create First Note
+                 {t('notes.createFirstBtn')}
                </button>
              </div>
            )}

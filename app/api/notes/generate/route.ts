@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const { subjectId, userId, prompt } = await request.json()
+    const { subjectId, userId, prompt, lingua } = await request.json()
 
     if (!subjectId || !userId) {
       return NextResponse.json(
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     `
 
     console.log(`Generating notes for subject ${subjectId}...`)
-    const aiResponse = await generateText(fullPrompt)
+    const aiResponse = await generateText(fullPrompt, lingua)
     
     if (!aiResponse) {
       throw new Error('AI returned an empty response')

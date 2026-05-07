@@ -3,6 +3,7 @@
 import { PlayCircle, CheckCircle2, Clock, Plus, Loader2, BookOpenText } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { QuizPlayer } from "./quiz-player";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 interface Quiz {
   id: string;
@@ -21,6 +22,7 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
+  const { t, locale } = useTranslation();
 
   const fetchQuizzes = async () => {
     if (!userId) return;
@@ -55,18 +57,19 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
           topic: "Course Content",
           difficulty: "intermediate",
           questionCount: 5,
+          lingua: locale
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate quiz");
+        throw new Error(errorData.error || t('exercises.generateFailed'));
       }
 
       await fetchQuizzes();
     } catch (error) {
       console.error("Error generating quiz:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate quiz");
+      alert(error instanceof Error ? error.message : t('exercises.generateFailed'));
     } finally {
       setIsGenerating(false);
     }
@@ -77,9 +80,9 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24));
     
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays === 0) return t('common.today');
+    if (diffDays === 1) return t('common.yesterday');
+    if (diffDays < 7) return t('common.daysAgo', { count: diffDays });
     return date.toLocaleDateString();
   };
 
@@ -135,9 +138,9 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
              )}
              <div className="relative z-10">
                 <h3 className={`font-semibold ${isScrolled ? 'text-[14px]' : 'text-[18px] mb-1'}`}>
-                  {isScrolled ? 'Generate Quiz' : 'Generate Practice'}
+                  {isScrolled ? t('exercises.generateQuiz') : t('exercises.generatePractice')}
                 </h3>
-                {!isScrolled && <p className="text-neutral-400 text-sm max-w-[200px]">Create a custom quiz from your materials.</p>}
+                {!isScrolled && <p className="text-neutral-400 text-sm max-w-[200px]">{t('exercises.createCustom')}</p>}
              </div>
              <div className={`relative z-10 flex items-center gap-2 text-[13px] font-semibold text-white group-hover:gap-2.5 transition-all ${isScrolled ? 'mt-0' : 'mt-4'}`}>
                {isGenerating ? (
@@ -145,21 +148,21 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
                ) : (
                  <PlayCircle className={`w-4 h-4 text-white ${isScrolled ? 'hidden md:block' : ''}`} />
                )}
-               {isScrolled ? (isGenerating ? 'Generating...' : 'Start') : (isGenerating ? 'Generating...' : 'Start Generating')}
+               {isScrolled ? (isGenerating ? t('common.generating') : t('common.start')) : (isGenerating ? t('common.generating') : t('exercises.startGenerating'))}
              </div>
           </button>
 
           <div className={`bg-white rounded-[12px] border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-center transition-all ${isScrolled ? 'p-2 gap-0 items-center md:items-start' : 'p-6 gap-2'}`}>
              <div className={`flex items-center gap-2 text-neutral-500 font-semibold ${isScrolled ? 'text-[10px] uppercase tracking-wider' : 'text-[13px]'}`}>
                <CheckCircle2 className={`${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} text-emerald-500`} strokeWidth={2.5}/>
-               {isScrolled ? 'Avg' : 'Average Score'}
+               {isScrolled ? t('exercises.avg') : t('exercises.averageScore')}
              </div>
              <div className={`font-semibold text-black tracking-tight ${isScrolled ? 'text-[16px]' : 'text-3xl'}`}>
                {stats.avgScore > 0 ? `${stats.avgScore}%` : '--%'}
              </div>
              {!isScrolled && (
                <div className="text-[13px] text-neutral-500 font-medium">
-                 {stats.completedCount > 0 ? `Based on ${stats.completedCount} quizzes` : 'Complete quizzes to see stats'}
+                 {stats.completedCount > 0 ? t('exercises.basedOn', { count: stats.completedCount }) : t('exercises.completeQuizzesToSeeStats')}
                </div>
              )}
           </div>
@@ -167,17 +170,17 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
           <div className={`bg-white rounded-[12px] border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-center transition-all ${isScrolled ? 'p-2 gap-0 items-center md:items-start' : 'p-6 gap-2'}`}>
              <div className={`flex items-center gap-2 text-neutral-500 font-semibold ${isScrolled ? 'text-[10px] uppercase tracking-wider' : 'text-[13px]'}`}>
                <Clock className={`${isScrolled ? 'w-3 h-3' : 'w-4 h-4'} text-neutral-400`} strokeWidth={2.5} />
-               {isScrolled ? 'Done' : 'Quizzes Completed'}
+               {isScrolled ? t('exercises.done') : t('exercises.quizzesCompleted')}
              </div>
              <div className={`font-semibold text-black tracking-tight ${isScrolled ? 'text-[16px]' : 'text-3xl'}`}>{stats.completedCount}</div>
              {!isScrolled && (
-               <div className="text-[13px] text-neutral-500 font-medium">Out of {quizzes.length} available</div>
+               <div className="text-[13px] text-neutral-500 font-medium">{t('exercises.outOfAvailable', { total: quizzes.length })}</div>
              )}
           </div>
        </div>
 
        <div className="flex flex-col gap-4">
-         <h2 className="text-[15px] font-semibold text-black mt-4">Recent Quizzes</h2>
+         <h2 className="text-[15px] font-semibold text-black mt-4">{t('exercises.recentQuizzes')}</h2>
          
          {loading ? (
            <div className="flex items-center justify-center py-12">
@@ -187,17 +190,17 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
            <div className="bg-white border border-dashed border-black/[0.08] rounded-[12px] p-12 text-center flex flex-col items-center gap-3">
              <BookOpenText className="w-10 h-10 text-neutral-300" />
              <div>
-               <p className="text-sm font-semibold text-black">No quizzes yet</p>
-               <p className="text-xs text-neutral-500">Generate a quiz to start practicing your knowledge.</p>
+               <p className="text-sm font-semibold text-black">{t('exercises.noQuizzesYet')}</p>
+               <p className="text-xs text-neutral-500">{t('exercises.generateToStart')}</p>
              </div>
            </div>
          ) : (
            <div className="bg-white border border-black/[0.08] text-[13px] rounded-[12px] overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <div className="grid grid-cols-12 gap-4 p-4 border-b border-black/[0.08] bg-[#FAFAFA]/50 font-semibold text-neutral-500 tracking-wide">
-                 <div className="col-span-4 md:col-span-4">Quiz Name</div>
-                 <div className="col-span-3">Difficulty</div>
-                 <div className="col-span-3">Score</div>
-                 <div className="col-span-2 md:col-span-2 text-right">Action</div>
+                 <div className="col-span-4 md:col-span-4">{t('exercises.quizName')}</div>
+                 <div className="col-span-3">{t('exercises.difficulty')}</div>
+                 <div className="col-span-3">{t('exercises.score')}</div>
+                 <div className="col-span-2 md:col-span-2 text-right">{t('common.action')}</div>
               </div>
               
               {quizzes.map((quiz) => (
@@ -227,7 +230,7 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
                          <span className="font-bold text-black text-[12px]">{quiz.last_score}%</span>
                        </>
                      ) : (
-                       <span className="text-neutral-400 text-[12px]">Not taken</span>
+                       <span className="text-neutral-400 text-[12px]">{t('exercises.notTaken')}</span>
                      )}
                    </div>
                    <div className="col-span-2 md:col-span-2 text-right">
@@ -235,7 +238,7 @@ export function ExercisesTab({ subjectId, userId, isScrolled }: { subjectId: str
                         onClick={() => setActiveQuiz(quiz)}
                         className="text-[13px] font-bold text-black hover:text-neutral-500 transition-colors"
                       >
-                        {quiz.last_score !== null ? 'Retake' : 'Start'}
+                        {quiz.last_score !== null ? t('exercises.retake') : t('common.start')}
                       </button>
                    </div>
                  </div>

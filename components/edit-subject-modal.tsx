@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from './auth-provider'
+import { useTranslation } from '@/lib/i18n/i18n-context'
 
 interface EditSubjectModalProps {
   isOpen: boolean
@@ -23,6 +24,7 @@ export function EditSubjectModal({ isOpen, onClose, onSubjectUpdated, subject }:
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { supabase } = useAuth()
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (isOpen) {
@@ -54,7 +56,7 @@ export function EditSubjectModal({ isOpen, onClose, onSubjectUpdated, subject }:
       onSubjectUpdated(data)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update subject')
+      setError(err instanceof Error ? err.message : t('editSubject.error'))
     } finally {
       setLoading(false)
     }
@@ -71,29 +73,29 @@ export function EditSubjectModal({ isOpen, onClose, onSubjectUpdated, subject }:
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-semibold mb-1">Edit Subject</h2>
+        <h2 className="text-xl font-semibold mb-1">{t('editSubject.title')}</h2>
         <p className="text-sm text-neutral-500 mb-6">
-          Update the name and icon for your subject
+          {t('editSubject.description')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="editSubjectName" className="block text-sm font-medium mb-2">
-              Subject Name
+              {t('editSubject.nameLabel')}
             </label>
             <input
               id="editSubjectName"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Machine Learning, Calculus II"
+              placeholder={t('editSubject.namePlaceholder')}
               required
               className="w-full px-4 py-2.5 bg-white border border-black/[0.08] rounded-xl text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black/[0.08] transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Subject Icon</label>
+            <label className="block text-sm font-medium mb-2">{t('editSubject.iconLabel')}</label>
             <div className="flex flex-wrap gap-2">
               {EMOJI_LIST.map((e) => (
                 <button
@@ -124,14 +126,14 @@ export function EditSubjectModal({ isOpen, onClose, onSubjectUpdated, subject }:
               onClick={onClose}
               className="flex-1 py-2.5 border border-black/[0.08] rounded-xl text-sm font-medium hover:bg-black/[0.02] transition-all"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || !name.trim()}
               className="flex-1 py-2.5 bg-black text-white rounded-xl text-sm font-medium hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? t('editSubject.saving') : t('editSubject.saveBtn')}
             </button>
           </div>
         </form>

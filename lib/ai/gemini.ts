@@ -18,13 +18,16 @@ export interface ChatResponse {
 export async function chatWithGemini(
   messages: ChatMessage[],
   context?: string,
-  image?: { data: string; mimeType: string }
+  image?: { data: string; mimeType: string },
+  lingua: string = 'en'
 ): Promise<ChatResponse> {
   try {
     // Build system instruction with context if provided
     let systemInstruction = `You are Nexus, an AI learning assistant for university students. You help students understand their course materials, explain complex concepts simply, and generate practice questions.
 
-Respond in a clear, concise, and helpful manner. Use examples when helpful.`
+Respond in a clear, concise, and helpful manner. Use examples when helpful.
+
+IMPORTANT: reply in ${lingua}`
 
     if (context) {
       systemInstruction += `\n\nContext from study materials:\n${context}`
@@ -81,7 +84,8 @@ export async function generateQuiz(
   topic: string,
   context: string,
   difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate',
-  questionCount: number = 5
+  questionCount: number = 5,
+  lingua: string = 'en'
 ): Promise<any> {
   try {
     const prompt = `Generate ${questionCount} multiple choice questions about "${topic}" based on the following material.
@@ -94,6 +98,7 @@ Requirements:
 - Format: JSON array of objects with: question, options (array of 4), correctAnswer, explanation
 - Options should be labeled A, B, C, D
 - Questions should test understanding, not just recall
+- reply in ${lingua}
 Return only the JSON, no additional text.`
 
     const response = await ai.models.generateContent({
@@ -123,11 +128,12 @@ Return only the JSON, no additional text.`
 /**
  * Generic text generation
  */
-export async function generateText(prompt: string): Promise<string> {
+export async function generateText(prompt: string, lingua: string = 'en'): Promise<string> {
   try {
+    const fullPrompt = `${prompt}\n\nreply in ${lingua}`
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+      contents: [{ role: 'user', parts: [{ text: fullPrompt }] }]
     })
 
     return response.text || ''
@@ -140,7 +146,7 @@ export async function generateText(prompt: string): Promise<string> {
 /**
  * Summarize a document
  */
-export async function summarizeDocument(content: string): Promise<string> {
+export async function summarizeDocument(content: string, lingua: string = 'en'): Promise<string> {
   try {
     const prompt = `Summarize the following content in a clear, concise manner suitable for university studying.
 Use Markdown formatting for structure.
@@ -151,6 +157,7 @@ Requirements:
 - Use bullet points for clarity
 - Use bold text for key terms
 - Keep it structured and easy to read
+- reply in ${lingua}
 
 Content:
 ${content}

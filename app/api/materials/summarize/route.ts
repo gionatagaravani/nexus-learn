@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { materialId } = await request.json()
+    const { materialId, lingua } = await request.json()
 
     if (!materialId) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Generate summary
-    const summary = await summarizeDocument(content)
+    const summary = await summarizeDocument(content, lingua)
 
     return NextResponse.json({ 
       summary, 

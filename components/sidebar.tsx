@@ -21,14 +21,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "./auth-provider";
 import { AddSubjectModal } from "./add-subject-modal";
-
-const mainNav = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Exercises", href: "/exercises", icon: BookOpen },
-  { name: "AI Chat", href: "/chat", icon: MessageSquare },
-  { name: "Progress", href: "/progress", icon: TrendingUp },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 interface SidebarProps {
   isMobileOpen?: boolean;
@@ -46,8 +39,17 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, signOut, supabase } = useAuth();
+  const { t } = useTranslation();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const mainNav = [
+    { name: t('sidebar.dashboard'), href: "/", icon: LayoutDashboard },
+    { name: t('sidebar.exercises'), href: "/exercises", icon: BookOpen },
+    { name: t('sidebar.aiChat'), href: "/chat", icon: MessageSquare },
+    { name: t('sidebar.progress'), href: "/progress", icon: TrendingUp },
+    { name: t('sidebar.settings'), href: "/settings", icon: Settings },
+  ];
 
   const fetchSubjects = async () => {
     const { data } = await supabase
@@ -159,7 +161,7 @@ export function Sidebar({
             <div className={`flex items-center mb-2 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               {!isCollapsed && (
                 <h4 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest px-3">
-                  My Subjects
+                  {t('sidebar.mySubjects')}
                 </h4>
               )}
               <button
@@ -178,7 +180,7 @@ export function Sidebar({
               {subjects.length === 0 ? (
                 !isCollapsed && (
                   <p className="px-3 py-2 text-xs text-neutral-400">
-                    No subjects yet. Create your first one!
+                    {t('sidebar.noSubjects')}
                   </p>
                 )
               ) : (
@@ -204,7 +206,7 @@ export function Sidebar({
                           onClick={() => setIsMobileOpen?.(false)}
                         >
                           <FileText className="w-3.5 h-3.5 shrink-0" />
-                          Materials & Notes
+                          {t('sidebar.materialsAndNotes')}
                         </Link>
                       </div>
                     )}
@@ -244,7 +246,7 @@ export function Sidebar({
             <button
               onClick={handleSignOut}
               className="text-neutral-400 hover:text-black hover:bg-black/[0.04] p-1.5 rounded-md transition-colors shrink-0"
-              title="Sign out"
+              title={t('sidebar.signOut')}
             >
               <LogOut className="w-4 h-4" />
             </button>

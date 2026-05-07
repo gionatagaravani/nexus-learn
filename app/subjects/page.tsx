@@ -1,12 +1,16 @@
+"use client";
+
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { BookOpen, FileText, ArrowRight, Clock, FolderPlus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
 import { AddSubjectModal } from "@/components/add-subject-modal";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 export default function SubjectsPage() {
   const { user, profile, supabase } = useAuth();
+  const { t } = useTranslation();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -41,7 +45,7 @@ export default function SubjectsPage() {
   };
 
   const handleDeleteSubject = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this subject? This will also delete all associated materials.')) {
+    if (!confirm(t('subjects.deleteConfirm'))) {
       return;
     }
 
@@ -56,18 +60,18 @@ export default function SubjectsPage() {
       setSubjects(prev => prev.filter(s => s.id !== id));
     } catch (error) {
       console.error('Error deleting subject:', error);
-      alert('Failed to delete subject');
+      alert(t('subjects.deleteError'));
     }
   };
 
   const formatTimeAgo = (date: string) => {
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
 
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-    return `${Math.floor(seconds / 604800)} weeks ago`;
+    if (seconds < 60) return t('common.justNow');
+    if (seconds < 3600) return t('common.minutesAgo', { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t('common.hoursAgo', { count: Math.floor(seconds / 3600) });
+    if (seconds < 604800) return t('common.daysAgo', { count: Math.floor(seconds / 86400) });
+    return t('common.weeksAgo', { count: Math.floor(seconds / 604800) });
   };
 
   const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'Student';
@@ -78,10 +82,10 @@ export default function SubjectsPage() {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-black">
-              {displayName}&apos;s Subjects
+              {t('subjects.title', { name: displayName })}
             </h1>
             <p className="text-sm text-neutral-500 mt-1 font-medium">
-              {subjects.length} subject{subjects.length !== 1 ? 's' : ''}
+              {subjects.length === 1 ? t('subjects.count_one') : t('subjects.count_other', { count: subjects.length })}
             </p>
           </div>
           <button
@@ -89,25 +93,25 @@ export default function SubjectsPage() {
             className="flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-xl text-sm font-medium hover:bg-neutral-800 transition-colors"
           >
             <BookOpen className="w-4 h-4" />
-            New Subject
+            {t('subjects.newSubjectBtn')}
           </button>
         </header>
 
         {loading ? (
-          <div className="text-center py-12 text-neutral-500">Loading subjects...</div>
+          <div className="text-center py-12 text-neutral-500">{t('subjects.loading')}</div>
         ) : subjects.length === 0 ? (
           <div className="text-center py-20 border-2 border-dashed border-black/[0.08] rounded-xl">
             <FolderPlus className="w-16 h-16 mx-auto text-neutral-300 mb-4" />
-            <h2 className="text-xl font-semibold text-black mb-2">No subjects yet</h2>
+            <h2 className="text-xl font-semibold text-black mb-2">{t('subjects.noSubjectsTitle')}</h2>
             <p className="text-neutral-500 mb-6 max-w-md mx-auto">
-              Create your first subject to start organizing your learning materials and taking notes.
+              {t('subjects.noSubjectsDesc')}
             </p>
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-sm font-medium hover:bg-neutral-800 transition-colors"
             >
               <BookOpen className="w-4 h-4" />
-              Create Your First Subject
+              {t('subjects.createFirstBtn')}
             </button>
           </div>
         ) : (
@@ -132,7 +136,7 @@ export default function SubjectsPage() {
                           handleDeleteSubject(subject.id);
                         }}
                         className="p-1.5 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors"
-                        title="Delete subject"
+                        title={t('common.delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -142,7 +146,7 @@ export default function SubjectsPage() {
                   <div className="flex items-center justify-between text-xs text-neutral-500 font-medium">
                     <span className="flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5" strokeWidth={2.5} />
-                      {subject.materials?.length || 0} files
+                      {t('common.files', { count: subject.materials?.length || 0 })}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" strokeWidth={2.5} />
@@ -155,7 +159,7 @@ export default function SubjectsPage() {
                     href={`/subject/${subject.id}`}
                     className="flex items-center justify-center gap-2 text-sm font-medium text-neutral-600 hover:text-black transition-colors group-hover:text-black"
                   >
-                    Open subject <ArrowRight className="w-4 h-4" />
+                    {t('subjects.openSubject')} <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>

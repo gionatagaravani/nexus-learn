@@ -5,10 +5,12 @@ import { Mail, Lock, Loader2 } from 'lucide-react'
 import { signIn, signInWithGoogle } from '@/lib/supabase/auth'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
+import { useTranslation } from '@/lib/i18n/i18n-context'
 
 export function LoginForm() {
   const router = useRouter()
   const { refreshUser } = useAuth()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -47,16 +49,16 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold tracking-tight">Welcome back</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{t('auth.loginTitle')}</h2>
         <p className="text-sm text-neutral-500 mt-1">
-          Sign in to your account to continue learning
+          {t('auth.loginDesc')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-2">
-            Email
+            {t('auth.email')}
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
@@ -74,7 +76,7 @@ export function LoginForm() {
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium mb-2">
-            Password
+            {t('auth.password')}
           </label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
@@ -102,7 +104,7 @@ export function LoginForm() {
           className="w-full py-2.5 bg-black text-white rounded-xl text-sm font-medium hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-black/[0.12] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {loading ? 'Signing in...' : 'Sign in'}
+          {loading ? t('auth.signingIn') : t('auth.signInBtn')}
         </button>
       </form>
 
@@ -112,7 +114,7 @@ export function LoginForm() {
             <div className="w-full border-t border-black/[0.08]" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-neutral-500">Or continue with</span>
+            <span className="px-2 bg-white text-neutral-500">{t('auth.orContinueWith')}</span>
           </div>
         </div>
 
@@ -140,7 +142,7 @@ export function LoginForm() {
               fill="#EA4335"
             />
           </svg>
-          Google
+          {t('auth.googleBtn')}
         </button>
       </div>
     </div>

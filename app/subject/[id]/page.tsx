@@ -17,6 +17,7 @@ import { ChatTab } from "./chat-tab";
 import { ExercisesTab } from "./exercises-tab";
 import { NotesTab } from "./notes-tab";
 import { EditSubjectModal } from "@/components/edit-subject-modal";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 type TabType = "materials" | "notes" | "chat" | "exercises";
 
@@ -27,6 +28,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const { user, supabase } = useAuth();
+  const { t } = useTranslation();
 
   const fetchSubject = async () => {
     const { id } = await params;
@@ -87,8 +89,8 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-96 text-center">
           <Library className="w-16 h-16 text-neutral-300 mb-4" />
-          <h2 className="text-xl font-semibold text-black mb-2">Subject not found</h2>
-          <p className="text-neutral-500">The subject you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
+          <h2 className="text-xl font-semibold text-black mb-2">{t('subject.notFoundTitle')}</h2>
+          <p className="text-neutral-500">{t('subject.notFoundDesc')}</p>
         </div>
       </DashboardLayout>
     );
@@ -114,7 +116,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                
                <div className={`flex items-center gap-2 text-neutral-500 font-semibold uppercase tracking-widest transition-all duration-300 overflow-hidden ${isHeaderCollapsed ? 'h-0 opacity-0 mb-0 text-[0px]' : 'h-5 opacity-100 mb-2 text-[13px]'}`}>
                  <Library className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5}/>
-                 Subject
+                 {t('subject.label')}
                </div>
                
                <h1 className={`font-semibold tracking-tight text-black transition-all duration-300 flex items-center gap-3 ${isHeaderCollapsed ? 'text-lg' : 'text-2xl'}`}>
@@ -124,7 +126,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                
                {!isHeaderCollapsed && (
                  <div className="text-neutral-500 font-medium transition-all duration-300 overflow-hidden h-5 opacity-100 text-[14px] mt-1">
-                   Created {new Date(subject.created_at).toLocaleDateString()}
+                   {t('subject.createdOn', { date: new Date(subject.created_at).toLocaleDateString() })}
                  </div>
                )}
                
@@ -141,7 +143,7 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
               <button 
                 onClick={() => setEditingSubject(subject)}
                 className="h-8 w-8 flex items-center justify-center shrink-0 rounded-md border border-transparent text-neutral-400 hover:text-black hover:bg-black/[0.04] transition-colors"
-                title="Edit subject"
+                title={t('common.edit')}
               >
                 <Settings2 className="w-4 h-4" />
               </button>
@@ -150,10 +152,10 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
 
           {/* Tabs System */}
           <div className="flex items-center gap-1 bg-black/[0.03] p-1 rounded-lg w-fit border border-black/[0.04] shrink-0">
-            <TabButton active={activeTab === "materials"} onClick={() => setActiveTab("materials")} icon={<FileText className="w-4 h-4"/>} label="Materials" />
-            <TabButton active={activeTab === "notes"} onClick={() => setActiveTab("notes")} icon={<FileText className="w-4 h-4"/>} label="Notes" />
-            <TabButton active={activeTab === "chat"} onClick={() => setActiveTab("chat")} icon={<MessageSquare className="w-4 h-4"/>} label="AI Chat" />
-            <TabButton active={activeTab === "exercises"} onClick={() => setActiveTab("exercises")} icon={<BookOpen className="w-4 h-4"/>} label="Exercises" />
+            <TabButton active={activeTab === "materials"} onClick={() => setActiveTab("materials")} icon={<FileText className="w-4 h-4"/>} label={t('subject.tabs.materials')} />
+            <TabButton active={activeTab === "notes"} onClick={() => setActiveTab("notes")} icon={<FileText className="w-4 h-4"/>} label={t('subject.tabs.notes')} />
+            <TabButton active={activeTab === "chat"} onClick={() => setActiveTab("chat")} icon={<MessageSquare className="w-4 h-4"/>} label={t('subject.tabs.aiChat')} />
+            <TabButton active={activeTab === "exercises"} onClick={() => setActiveTab("exercises")} icon={<BookOpen className="w-4 h-4"/>} label={t('subject.tabs.exercises')} />
           </div>
         </div>
 

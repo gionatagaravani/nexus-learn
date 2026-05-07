@@ -6,9 +6,11 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useEffect, useState } from "react";
 import { AddSubjectModal } from "@/components/add-subject-modal";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 export default function Home() {
   const { user, profile, supabase } = useAuth();
+  const { t } = useTranslation();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,11 +53,11 @@ export default function Home() {
   const formatTimeAgo = (date: string) => {
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
 
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-    return `${Math.floor(seconds / 604800)} weeks ago`;
+    if (seconds < 60) return t('common.justNow');
+    if (seconds < 3600) return t('common.minutesAgo', { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t('common.hoursAgo', { count: Math.floor(seconds / 3600) });
+    if (seconds < 604800) return t('common.daysAgo', { count: Math.floor(seconds / 86400) });
+    return t('common.weeksAgo', { count: Math.floor(seconds / 604800) });
   };
 
   const displayName = profile?.full_name || profile?.email?.split('@')[0] || 'Student';
@@ -65,10 +67,10 @@ export default function Home() {
       <div className="flex flex-col gap-6 pt-6 pb-8">
         <header>
           <h1 className="text-2xl font-semibold tracking-tight text-black">
-            Welcome back, {displayName}
+            {t('home.welcome', { name: displayName })}
           </h1>
           <p className="text-sm text-neutral-500 mt-1 font-medium">
-            Here&apos;s your learning overview for today.
+            {t('home.overview')}
           </p>
         </header>
 
@@ -76,24 +78,24 @@ export default function Home() {
           <div className="bg-white rounded-[12px] p-5 border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col gap-3 group hover:border-black/[0.15] transition-all cursor-pointer">
             <div className="flex items-center gap-2 text-black font-semibold text-[13px]">
               <Sparkles className="w-3.5 h-3.5" strokeWidth={2.5} />
-              Suggested Action
+              {t('home.suggestedAction')}
             </div>
             <h3 className="text-[15px] font-semibold text-black leading-snug">
-              {subjects.length > 0 ? `Review ${subjects[0].name}` : 'Create your first subject'}
+              {subjects.length > 0 ? t('home.reviewSubject', { name: subjects[0].name }) : t('home.createFirstSubject')}
             </h3>
             <p className="text-[13px] text-neutral-500 line-clamp-2 leading-relaxed">
               {subjects.length > 0
-                ? `Start studying ${subjects[0].name} materials to make progress.`
-                : 'Add your first subject to begin your learning journey.'}
+                ? t('home.startStudying', { name: subjects[0].name })
+                : t('home.addFirstSubject')}
             </p>
             <div className="flex items-center gap-1 text-[13px] font-semibold text-black group-hover:gap-1.5 transition-all mt-auto pt-4">
               {subjects.length > 0 ? (
                 <>
-                  Start review <ArrowRight className="w-3.5 h-3.5" />
+                  {t('home.startReview')} <ArrowRight className="w-3.5 h-3.5" />
                 </>
               ) : (
                 <>
-                  Create subject <ArrowRight className="w-3.5 h-3.5" />
+                  {t('home.createSubject')} <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
             </div>
@@ -102,7 +104,7 @@ export default function Home() {
           <div className="bg-white rounded-[12px] p-5 border border-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col gap-3 group hover:border-black/[0.15] transition-all cursor-pointer">
             <div className="flex items-center gap-2 text-neutral-500 font-semibold text-[13px]">
               <PlayCircle className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
-              Continue Studying
+              {t('home.continueStudying')}
             </div>
             {subjects.length > 0 ? (
               <>
@@ -110,20 +112,20 @@ export default function Home() {
                   {subjects[0].name}
                 </h3>
                 <p className="text-[13px] text-neutral-500 line-clamp-2 leading-relaxed">
-                  {subjects[0].materials?.length || 0} files uploaded. Start exploring your materials.
+                  {t('home.filesUploaded', { count: subjects[0].materials?.length || 0 })}
                 </p>
                 <div className="flex items-center gap-1 text-[13px] font-semibold text-neutral-600 group-hover:text-black group-hover:gap-1.5 transition-all mt-auto">
-                  Open <ArrowRight className="w-3.5 h-3.5" />
+                  {t('home.open')} <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </>
             ) : (
               <>
-                <h3 className="text-[15px] font-semibold text-black leading-snug">No subjects yet</h3>
+                <h3 className="text-[15px] font-semibold text-black leading-snug">{t('home.noSubjectsYet')}</h3>
                 <p className="text-[13px] text-neutral-500 line-clamp-2 leading-relaxed">
-                  Create your first subject to start uploading materials and taking notes.
+                  {t('home.createFirstSubjectDesc')}
                 </p>
                 <div className="flex items-center gap-1 text-[13px] font-semibold text-neutral-600 group-hover:text-black group-hover:gap-1.5 transition-all mt-auto">
-                  Get started <ArrowRight className="w-3.5 h-3.5" />
+                  {t('home.getStarted')} <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </>
             )}
@@ -136,9 +138,9 @@ export default function Home() {
             <div className="w-8 h-8 rounded-full bg-white border border-black/[0.06] shadow-sm flex items-center justify-center text-black mb-3">
               <BookOpen className="w-4 h-4" strokeWidth={2} />
             </div>
-            <h3 className="text-[14px] font-semibold text-black">Create New Subject</h3>
+            <h3 className="text-[14px] font-semibold text-black">{t('home.createNewSubject')}</h3>
             <p className="text-[13px] text-neutral-500 mt-1 max-w-[200px]">
-              Add a new subject to organize your materials
+              {t('home.createNewSubjectDesc')}
             </p>
           </button>
         </div>
@@ -146,30 +148,30 @@ export default function Home() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between mt-2">
             <h2 className="text-[15px] font-semibold text-black">
-              Recent Subjects
+              {t('home.recentSubjects')}
             </h2>
             <Link
               href="/subjects"
               className="text-[13px] text-neutral-500 hover:text-black font-semibold transition-colors"
             >
-              View all
+              {t('common.viewAll')}
             </Link>
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-neutral-500">Loading subjects...</div>
+            <div className="text-center py-8 text-neutral-500">{t('home.loadingSubjects')}</div>
           ) : subjects.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-black/[0.08] rounded-xl">
               <FolderPlus className="w-12 h-12 mx-auto text-neutral-300 mb-4" />
-              <h3 className="text-lg font-semibold text-black mb-2">No subjects yet</h3>
+              <h3 className="text-lg font-semibold text-black mb-2">{t('home.noSubjectsYet')}</h3>
               <p className="text-sm text-neutral-500 mb-4 max-w-md mx-auto">
-                Create your first subject to start organizing your learning materials and taking notes.
+                {t('home.noSubjectsDesc')}
               </p>
               <button
                 onClick={() => setIsAddModalOpen(true)}
                 className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition-colors"
               >
-                Create Subject
+                {t('home.createSubjectBtn')}
               </button>
             </div>
           ) : (
@@ -192,7 +194,7 @@ export default function Home() {
                       </span>
                       <span className="flex items-center gap-1.5">
                         <FileText className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        {subject.materials?.length || 0} files
+                        {t('common.files', { count: subject.materials?.length || 0 })}
                       </span>
                     </div>
                   </div>

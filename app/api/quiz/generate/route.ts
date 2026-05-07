@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const { subjectId, userId, topic, difficulty = 'intermediate', questionCount = 5 } = await request.json()
+    const { subjectId, userId, topic, difficulty = 'intermediate', questionCount = 5, lingua } = await request.json()
 
     if (!subjectId || !userId) {
       return NextResponse.json(
@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
       topic || 'Subject Materials',
       context,
       difficulty,
-      questionCount
+      questionCount,
+      lingua
     )
 
     // Create quiz in database

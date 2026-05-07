@@ -5,6 +5,7 @@ import { Send, Upload, User, BrainCircuit, X, Image as ImageIcon } from "lucide-
 import { useAuth } from "@/components/auth-provider";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 interface Message {
   id: string;
@@ -16,15 +17,16 @@ interface Message {
 
 export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: string }) {
   const { profile } = useAuth();
+  const { t, locale } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<string[]>([
-    "Create a quiz on this",
-    "Explain mathematical proof",
-    "Summarize Lecture 1",
-    "What are the key concepts?",
+    t('chat.suggestions.quiz'),
+    t('chat.suggestions.proof'),
+    t('chat.suggestions.summary'),
+    t('chat.suggestions.concepts'),
   ]);
   const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string } | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
   const fetchSuggestions = useCallback(async () => {
     if (!subjectId) return;
     try {
-      const response = await fetch(`/api/chat/suggestions?subjectId=${subjectId}`);
+      const response = await fetch(`/api/chat/suggestions?subjectId=${subjectId}&lingua=${locale}`);
       if (response.ok) {
         const data = await response.json();
         if (data.suggestions && data.suggestions.length > 0) {
@@ -84,7 +86,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      alert(t('chat.selectImage'));
       return;
     }
 
@@ -130,11 +132,12 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
           messages: [...messages, userMessage],
           subjectId,
           userId,
-          image: imageToSend
+          image: imageToSend,
+          lingua: locale
         }),
       });
 
-      if (!response.ok) throw new Error("Chat failed");
+      if (!response.ok) throw new Error(t('chat.chatFailed'));
 
       const { message, imageUrl } = await response.json();
 
@@ -159,7 +162,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "Sorry, I encountered an error. Please try again.",
+          content: t('chat.error'),
         },
       ]);
     } finally {
@@ -188,7 +191,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
             <div className="text-center">
               <BrainCircuit className="w-12 h-12 mx-auto text-neutral-300 mb-4" />
               <p className="text-sm text-neutral-500 font-medium">
-                Ask Nexus anything about this subject
+                {t('chat.askNexus')}
               </p>
             </div>
           </div>
@@ -223,7 +226,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
                         message.role === "assistant" ? "text-black" : "text-neutral-500"
                       }`}
                     >
-                      {message.role === "assistant" ? "Nexus" : userName}
+                      {message.role === "assistant" ? t('chat.nexus') : userName}
                     </span>
                     {message.created_at && (
                       <span className="text-[11px] text-neutral-400 font-medium">
@@ -315,7 +318,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
               <ImageIcon className="w-5 h-5" strokeWidth={2.5} />
             </button>
             <textarea
-              placeholder="Ask Nexus, or upload an image..."
+              placeholder={t('chat.inputPlaceholder')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
@@ -331,7 +334,7 @@ export function ChatTab({ subjectId, userId }: { subjectId: string; userId?: str
             </button>
           </div>
           <p className="mt-3 text-[11px] text-center text-neutral-400 font-medium tracking-wide">
-            Nexus can make mistakes. Verify important information.
+            {t('chat.warning')}
           </p>
         </div>
       </div>

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, subjectId, userId, image } = await request.json()
+    const { messages, subjectId, userId, image, lingua } = await request.json()
 
     if (!messages || !userId || !subjectId) {
       return NextResponse.json(
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AI Response
-    const response = await chatWithGemini(messages, context, image)
+    const response = await chatWithGemini(messages, context, image, lingua)
 
     // Persist messages
     await Promise.all([

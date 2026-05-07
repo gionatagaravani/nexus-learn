@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const subjectId = searchParams.get('subjectId')
+    const lingua = searchParams.get('lingua') || 'en'
 
     if (!subjectId) {
       return NextResponse.json({ suggestions: getDefaultSuggestions() })
@@ -35,7 +36,7 @@ Return ONLY a comma-separated list of the 4 suggestions.
 Notes:
 ${context}`
 
-    const response = await generateText(prompt)
+    const response = await generateText(prompt, lingua)
     const suggestions = response.split(',').map(s => s.trim().replace(/^"|"$/g, ''))
 
     return NextResponse.json({ suggestions: suggestions.slice(0, 4) })

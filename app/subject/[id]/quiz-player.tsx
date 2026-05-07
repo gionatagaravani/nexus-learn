@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, ChevronRight, ChevronLeft, CheckCircle2, AlertCircle, Loader2, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslation } from "@/lib/i18n/i18n-context";
 
 interface Question {
   question: string;
@@ -27,6 +28,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const { t } = useTranslation();
 
   const questions = quiz.questions;
   const currentQuestion = questions[currentQuestionIndex];
@@ -80,7 +82,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
       onComplete(score);
     } catch (error) {
       console.error("Error finishing quiz:", error);
-      alert("Failed to save your score, but you completed the quiz!");
+      alert(t('quiz.saveFailed'));
       setIsFinished(true);
     } finally {
       setIsSubmitting(false);
@@ -99,11 +101,11 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
           <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-600">
             <Trophy className="w-10 h-10" />
           </div>
-          <h2 className="text-2xl font-bold text-black mb-2">Quiz Completed!</h2>
-          <p className="text-neutral-500 mb-6 font-medium">You&apos;ve finished &quot;{quiz.title}&quot;</p>
+          <h2 className="text-2xl font-bold text-black mb-2">{t('quiz.completed')}</h2>
+          <p className="text-neutral-500 mb-6 font-medium">{t('quiz.finishedDesc', { title: quiz.title })}</p>
           
           <div className="bg-neutral-50 rounded-xl p-6 mb-8 border border-black/[0.04]">
-            <div className="text-sm font-semibold text-neutral-400 uppercase tracking-widest mb-1">Your Score</div>
+            <div className="text-sm font-semibold text-neutral-400 uppercase tracking-widest mb-1">{t('quiz.yourScore')}</div>
             <div className={`text-5xl font-bold ${score >= 80 ? 'text-emerald-500' : score >= 60 ? 'text-amber-500' : 'text-red-500'}`}>
               {score}%
             </div>
@@ -113,7 +115,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
             onClick={onClose}
             className="w-full py-3 bg-black text-white rounded-xl font-semibold hover:bg-neutral-800 transition-colors shadow-lg shadow-black/10"
           >
-            Back to Subject
+            {t('quiz.backToSubject')}
           </button>
         </motion.div>
       </div>
@@ -133,7 +135,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
           </button>
           <div>
             <h3 className="font-semibold text-black">{quiz.title}</h3>
-            <p className="text-xs text-neutral-500 font-medium">Question {currentQuestionIndex + 1} of {questions.length}</p>
+            <p className="text-xs text-neutral-500 font-medium">{t('quiz.questionProgress', { current: currentQuestionIndex + 1, total: questions.length })}</p>
           </div>
         </div>
         <div className="w-32 h-2 bg-neutral-100 rounded-full overflow-hidden">
@@ -199,7 +201,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
                 >
                   <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider mb-2">
                     {isCorrect ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                    {isCorrect ? "Correct!" : "Incorrect"}
+                    {isCorrect ? t('quiz.correct') : t('quiz.incorrect')}
                   </div>
                   <p className="text-[14px] font-medium leading-relaxed">
                     {currentQuestion.explanation}
@@ -220,7 +222,7 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
             className="flex items-center gap-2 text-sm font-semibold text-neutral-400 hover:text-black disabled:opacity-0 transition-all"
           >
             <ChevronLeft className="w-4 h-4" />
-            Previous
+            {t('common.previous')}
           </button>
 
           <button
@@ -234,9 +236,9 @@ export function QuizPlayer({ quiz, onClose, onComplete }: QuizPlayerProps) {
             {isSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : showExplanation ? (
-              isLastQuestion ? "Finish Quiz" : "Next Question"
+              isLastQuestion ? t('quiz.finishQuiz') : t('quiz.nextQuestion')
             ) : (
-              "Check Answer"
+              t('quiz.checkAnswer')
             )}
             {!isSubmitting && <ChevronRight className="w-4 h-4" />}
           </button>
